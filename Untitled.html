@@ -1,0 +1,399 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.5">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;Weekly Payment Calendar&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Use Inter font */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-family: 'Inter', sans-serif;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Style for payment entries */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.payment-entry {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background-color: #dbeafe; /* Tailwind blue-100 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border: 1px solid #93c5fd; /* Tailwind blue-300 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: #1e40af; /* Tailwind blue-800 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 2px 4px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 4px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.75rem; /* text-xs */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-top: 2px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: block; /* Make each payment take its own line */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>overflow: hidden;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>text-overflow: ellipsis;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>white-space: nowrap;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">         </span>/* Style for the weekly total */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.weekly-total {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background-color: #fef9c3; /* Tailwind yellow-100 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-top: 1px solid #fde047; /* Tailwind yellow-400 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: #713f12; /* Tailwind yellow-900 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 2px 4px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.75rem; /* text-xs */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-weight: 600; /* semibold */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-top: 4px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: block;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>position: absolute; /* Position relative to parent cell */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>bottom: 2px; /* Stick to the bottom */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>left: 2px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>right: 2px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 4px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Style for the current day highlight */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.today-highlight {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background-color: #fef08a; /* Tailwind yellow-200 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 50%;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>width: 1.75rem; /* Adjust size */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>height: 1.75rem; /* Adjust size */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>align-items: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>justify-content: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-weight: bold;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>position: absolute; /* Position relative to parent cell */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>top: 0.15rem; /* Adjust positioning */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>right: 0.15rem; /* Adjust positioning */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>z-index: 10; /* Ensure it's above the date number if overlapping */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">         </span>/* Ensure calendar cells have minimum height and relative positioning */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.calendar-cell {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>min-height: 90px; /* Increased min-height slightly for weekly total */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>position: relative; /* Needed for absolute positioning of children */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding-top: 1.75rem; /* Space for the date number */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding-bottom: 1.5rem; /* Extra space at bottom for weekly total */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding-left: 0.25rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding-right: 0.25rem;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Position date number in top-right corner */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.date-number {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>position: absolute;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>top: 0.25rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>right: 0.25rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.75rem; /* text-xs */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: #6b7280; /* Tailwind gray-500 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>z-index: 5; /* Ensure it's below the today highlight */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">         </span>/* Adjust date number position when today highlight is present */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.today-highlight + .date-number {</p>
+<p class="p1"><span class="Apple-converted-space">             </span>color: #1f2937; /* Tailwind gray-800 - Ensure it's visible within highlight */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Style for the total remaining balance display */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#total-remaining-balance-display {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 1.125rem; /* text-lg */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-weight: 600; /* semibold */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: #166534; /* Tailwind green-700 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 1rem; /* Space below it */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 0.5rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background-color: #f0fdf4; /* Tailwind green-50 */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 0.375rem; /* rounded-md */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border: 1px solid #bbf7d0; /* Tailwind green-200 */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body class="bg-gray-100 p-4 md:p-8"&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="max-w-5xl mx-auto bg-white rounded-lg shadow p-6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;h1 class="text-2xl font-semibold text-gray-800 mb-2 text-center"&gt;Payment Calendar&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="total-remaining-balance-display" class="mb-4"&gt;&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="flex justify-between items-center mb-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button id="prev-month" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150 ease-in-out"&gt;&amp;lt; Prev&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2 id="month-year" class="text-xl font-semibold text-gray-700"&gt;&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button id="next-month" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150 ease-in-out"&gt;Next &amp;gt;&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-600 mb-2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;Sun&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;Mon&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;Tue&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;Wed&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;Thu&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;Fri&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;Sat&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="calendar-grid" class="grid grid-cols-7 gap-1 border border-gray-200 rounded-b-lg"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// --- Payment Data ---</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const payments = [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>// Ref 22239 ($10001.00 @ 40.60%)</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-01-14', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-01-21', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-01-28', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-02-04', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-02-11', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-02-18', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-02-25', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-04', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-11', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-18', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-25', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-01', amount: 812.00, ref: '22239' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-08', amount: 810.35, ref: '22239' },</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>// Ref 22716 ($15000.00 @ 45.50%)</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-03', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-10', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-17', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-24', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-31', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-07', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-14', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-22', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-28', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-05-05', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-05-12', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-05-20', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-05-26', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-06-02', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-06-09', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-06-16', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-06-23', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-06-30', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-07-07', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-07-14', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-07-21', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-07-28', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-08-05', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-08-11', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-08-18', amount: 647.54, ref: '22716' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-08-25', amount: 644.28, ref: '22716' },</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>// Ref 22475 ($10001.00 @ 45.56%)</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-02-05', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-02-12', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-02-19', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-02-26', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-05', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-12', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-19', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-03-26', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-02', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-09', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-16', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-23', amount: 817.31, ref: '22475' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-30', amount: 815.58, ref: '22475' },</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>// Ref 22996 ($20000.00 @ 40.57%)</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-02', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-09', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-16', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-23', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-04-30', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-05-07', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-05-14', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-05-21', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-05-28', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-06-04', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-06-11', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-06-18', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-06-25', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-07-02', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-07-09', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-07-16', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-07-23', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-07-30', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-08-06', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-08-13', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-08-20', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-08-27', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-09-03', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-09-10', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-09-17', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-09-24', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-10-01', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-10-08', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-10-15', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-10-22', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-10-29', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-11-05', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-11-12', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-11-19', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-11-26', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-12-03', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-12-10', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-12-17', amount: 596.77, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ date: '2025-12-24', amount: 585.93, ref: '22996' },</p>
+<p class="p1"><span class="Apple-converted-space">        </span>];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// --- Calendar Logic ---</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const calendarGrid = document.getElementById('calendar-grid');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const monthYearDisplay = document.getElementById('month-year');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const prevMonthButton = document.getElementById('prev-month');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const nextMonthButton = document.getElementById('next-month');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const totalRemainingBalanceDisplay = document.getElementById('total-remaining-balance-display');</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// "Today's" date for calculation purposes, set to May 7, 2025 as per user context</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const todayFixed = new Date(2025, 4, 7); // Month is 0-indexed (4 = May)</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// To ensure time component doesn't affect date comparisons, set to start of day</p>
+<p class="p1"><span class="Apple-converted-space">        </span>todayFixed.setHours(0, 0, 0, 0);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const currentYearFixed = todayFixed.getFullYear();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const currentMonthFixed = todayFixed.getMonth();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const currentDayFixed = todayFixed.getDate();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>let displayedYear = currentYearFixed;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let displayedMonth = currentMonthFixed;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Total initial loan amount from all schedules</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const initialTotalLoanAmount = 55003.00;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/**</p>
+<p class="p1"><span class="Apple-converted-space">         </span>* Calculates and displays the total remaining balance.</p>
+<p class="p1"><span class="Apple-converted-space">         </span>*/</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function updateTotalRemainingBalance() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let totalPaidToDate = 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>payments.forEach(payment =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// Parse payment.date string "YYYY-MM-DD" into a Date object</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const [year, month, day] = payment.date.split('-').map(Number);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const paymentDate = new Date(year, month - 1, day); // month is 0-indexed for Date constructor</p>
+<p class="p1"><span class="Apple-converted-space">                </span>paymentDate.setHours(0,0,0,0); // Normalize to start of day</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (paymentDate &lt;= todayFixed) {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>totalPaidToDate += payment.amount;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const remainingBalance = initialTotalLoanAmount - totalPaidToDate;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>totalRemainingBalanceDisplay.textContent = `Total Remaining Balance (as of ${todayFixed.toLocaleDateString('en-CA')}): ${formatCurrency(remainingBalance)}`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/**</p>
+<p class="p1"><span class="Apple-converted-space">         </span>* Formats a number as currency (USD).</p>
+<p class="p1"><span class="Apple-converted-space">         </span>* @param {number} amount - The amount to format.</p>
+<p class="p1"><span class="Apple-converted-space">         </span>* @returns {string} Formatted currency string.</p>
+<p class="p1"><span class="Apple-converted-space">         </span>*/</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function formatCurrency(amount) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/**</p>
+<p class="p1"><span class="Apple-converted-space">         </span>* Generates and displays the calendar for a given month and year.</p>
+<p class="p1"><span class="Apple-converted-space">         </span>* @param {number} year - The full year (e.g., 2025).</p>
+<p class="p1"><span class="Apple-converted-space">         </span>* @param {number} month - The month (0-indexed, 0 = January).</p>
+<p class="p1"><span class="Apple-converted-space">         </span>*/</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function generateCalendar(year, month) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>calendarGrid.innerHTML = ''; // Clear previous grid</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const monthName = new Date(year, month).toLocaleString('en-US', { month: 'long' });</p>
+<p class="p1"><span class="Apple-converted-space">            </span>monthYearDisplay.textContent = `${monthName} ${year}`;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const firstDayOfMonth = new Date(year, month, 1).getDay();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const daysInMonth = new Date(year, month + 1, 0).getDate();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let weeklyTotal = 0;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>for (let i = 0; i &lt; firstDayOfMonth; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const blankCell = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>blankCell.className = 'bg-gray-50 border border-gray-200';</p>
+<p class="p1"><span class="Apple-converted-space">                </span>calendarGrid.appendChild(blankCell);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>for (let day = 1; day &lt;= daysInMonth; day++) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const cell = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>cell.className = 'calendar-cell bg-white border border-gray-200 overflow-y-auto';</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>const dateNumberSpan = document.createElement('span');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>dateNumberSpan.textContent = day;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>dateNumberSpan.className = 'date-number';</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>// Highlight "today" based on todayFixed (May 7, 2025)</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const cellDate = new Date(year, month, day);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>cellDate.setHours(0,0,0,0); // Normalize for comparison</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (cellDate.getTime() === todayFixed.getTime()) {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>const todayDiv = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>todayDiv.className = 'today-highlight';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>todayDiv.textContent = day;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>cell.appendChild(todayDiv);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>cell.appendChild(dateNumberSpan);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const paymentsForDay = payments.filter(p =&gt; p.date === cellDateStr);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const dailyTotal = paymentsForDay.reduce((sum, p) =&gt; sum + p.amount, 0);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>weeklyTotal += dailyTotal;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>paymentsForDay.forEach(payment =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>const paymentDiv = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>paymentDiv.className = 'payment-entry';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>const formattedAmount = formatCurrency(payment.amount);</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>paymentDiv.textContent = `${formattedAmount} (Ref: ${payment.ref})`;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>paymentDiv.title = `${formattedAmount} (Ref: ${payment.ref})`;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>cell.appendChild(paymentDiv);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>const dayOfWeek = new Date(year, month, day).getDay();</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (dayOfWeek === 6 || day === daysInMonth) {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>if (weeklyTotal &gt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>const weeklyTotalDiv = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>weeklyTotalDiv.className = 'weekly-total';</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>weeklyTotalDiv.textContent = `Week: ${formatCurrency(weeklyTotal)}`;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>weeklyTotalDiv.title = `Total for week ending ${cellDateStr}: ${formatCurrency(weeklyTotal)}`;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>cell.appendChild(weeklyTotalDiv);</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>weeklyTotal = 0;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>calendarGrid.appendChild(cell);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const totalCellsFilled = firstDayOfMonth + daysInMonth;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const remainingCells = (7 - (totalCellsFilled % 7)) % 7;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>for (let i = 0; i &lt; remainingCells; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const blankCell = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>blankCell.className = 'bg-gray-50 border border-gray-200';</p>
+<p class="p1"><span class="Apple-converted-space">                </span>calendarGrid.appendChild(blankCell);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// --- Event Listeners ---</p>
+<p class="p1"><span class="Apple-converted-space">        </span>prevMonthButton.addEventListener('click', () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>displayedMonth--;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (displayedMonth &lt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>displayedMonth = 11;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>displayedYear--;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>generateCalendar(displayedYear, displayedMonth);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>nextMonthButton.addEventListener('click', () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>displayedMonth++;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (displayedMonth &gt; 11) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>displayedMonth = 0;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>displayedYear++;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>generateCalendar(displayedYear, displayedMonth);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// --- Initial Load ---</p>
+<p class="p1"><span class="Apple-converted-space">        </span>updateTotalRemainingBalance(); // Calculate and display remaining balance once on load</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Generate the calendar for the month of "todayFixed" (May 2025) or January 2025</p>
+<p class="p1"><span class="Apple-converted-space">        </span>generateCalendar(displayedYear, displayedMonth); // Will use May 2025</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// generateCalendar(2025, 0); // To start with January 2025</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
