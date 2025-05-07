@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Payment Calendar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style for payment entries */
+        .payment-entry {
+            background-color: #dbeafe; /* Tailwind blue-100 */
+            border: 1px solid #93c5fd; /* Tailwind blue-300 */
+            color: #1e40af; /* Tailwind blue-800 */
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 0.75rem; /* text-xs */
+            margin-top: 2px;
+            display: block; /* Make each payment take its own line */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+         /* Style for the weekly total */
+        .weekly-total {
+            background-color: #fef9c3; /* Tailwind yellow-100 */
+            border-top: 1px solid #fde047; /* Tailwind yellow-400 */
+            color: #713f12; /* Tailwind yellow-900 */
+            padding: 2px 4px;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600; /* semibold */
+            margin-top: 4px;
+            text-align: center;
+            display: block;
+            position: absolute; /* Position relative to parent cell */
+            bottom: 2px; /* Stick to the bottom */
+            left: 2px;
+            right: 2px;
+            border-radius: 4px;
+        }
+        /* Style for the current day highlight */
+        .today-highlight {
+            background-color: #fef08a; /* Tailwind yellow-200 */
+            border-radius: 50%;
+            width: 1.75rem; /* Adjust size */
+            height: 1.75rem; /* Adjust size */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: absolute; /* Position relative to parent cell */
+            top: 0.15rem; /* Adjust positioning */
+            right: 0.15rem; /* Adjust positioning */
+            z-index: 10; /* Ensure it's above the date number if overlapping */
+        }
+         /* Ensure calendar cells have minimum height and relative positioning */
+        .calendar-cell {
+            min-height: 90px; /* Increased min-height slightly for weekly total */
+            position: relative; /* Needed for absolute positioning of children */
+            padding-top: 1.75rem; /* Space for the date number */
+            padding-bottom: 1.5rem; /* Extra space at bottom for weekly total */
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+        }
+        /* Position date number in top-right corner */
+        .date-number {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            font-size: 0.75rem; /* text-xs */
+            color: #6b7280; /* Tailwind gray-500 */
+            z-index: 5; /* Ensure it's below the today highlight */
+        }
+         /* Adjust date number position when today highlight is present */
+        .today-highlight + .date-number {
+             color: #1f2937; /* Tailwind gray-800 - Ensure it's visible within highlight */
+        }
+        /* Style for the total remaining balance display */
+        #total-remaining-balance-display {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* semibold */
+            color: #166534; /* Tailwind green-700 */
+            text-align: center;
+            margin-bottom: 1rem; /* Space below it */
+            padding: 0.5rem;
+            background-color: #f0fdf4; /* Tailwind green-50 */
+            border-radius: 0.375rem; /* rounded-md */
+            border: 1px solid #bbf7d0; /* Tailwind green-200 */
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto bg-white rounded-lg shadow p-6">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-2 text-center">Payment Calendar</h1>
+        <div id="total-remaining-balance-display" class="mb-4"></div>
+
+        <div class="flex justify-between items-center mb-4">
+            <button id="prev-month" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150 ease-in-out">&lt; Prev</button>
+            <h2 id="month-year" class="text-xl font-semibold text-gray-700"></h2>
+            <button id="next-month" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150 ease-in-out">Next &gt;</button>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-600 mb-2">
+            <div>Sun</div>
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+        </div>
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 border border-gray-200 rounded-b-lg">
+            </div>
+    </div>
+
+    <script>
+        // --- Payment Data ---
+        const payments = [
+          // Ref 22239 ($10001.00 @ 40.60%)
+          { date: '2025-01-14', amount: 812.00, ref: '22239' },
+          { date: '2025-01-21', amount: 812.00, ref: '22239' },
+          { date: '2025-01-28', amount: 812.00, ref: '22239' },
+          { date: '2025-02-04', amount: 812.00, ref: '22239' },
+          { date: '2025-02-11', amount: 812.00, ref: '22239' },
+          { date: '2025-02-18', amount: 812.00, ref: '22239' },
+          { date: '2025-02-25', amount: 812.00, ref: '22239' },
+          { date: '2025-03-04', amount: 812.00, ref: '22239' },
+          { date: '2025-03-11', amount: 812.00, ref: '22239' },
+          { date: '2025-03-18', amount: 812.00, ref: '22239' },
+          { date: '2025-03-25', amount: 812.00, ref: '22239' },
+          { date: '2025-04-01', amount: 812.00, ref: '22239' },
+          { date: '2025-04-08', amount: 810.35, ref: '22239' },
+
+          // Ref 22716 ($15000.00 @ 45.50%)
+          { date: '2025-03-03', amount: 647.54, ref: '22716' },
+          { date: '2025-03-10', amount: 647.54, ref: '22716' },
+          { date: '2025-03-17', amount: 647.54, ref: '22716' },
+          { date: '2025-03-24', amount: 647.54, ref: '22716' },
+          { date: '2025-03-31', amount: 647.54, ref: '22716' },
+          { date: '2025-04-07', amount: 647.54, ref: '22716' },
+          { date: '2025-04-14', amount: 647.54, ref: '22716' },
+          { date: '2025-04-22', amount: 647.54, ref: '22716' },
+          { date: '2025-04-28', amount: 647.54, ref: '22716' },
+          { date: '2025-05-05', amount: 647.54, ref: '22716' },
+          { date: '2025-05-12', amount: 647.54, ref: '22716' },
+          { date: '2025-05-20', amount: 647.54, ref: '22716' },
+          { date: '2025-05-26', amount: 647.54, ref: '22716' },
+          { date: '2025-06-02', amount: 647.54, ref: '22716' },
+          { date: '2025-06-09', amount: 647.54, ref: '22716' },
+          { date: '2025-06-16', amount: 647.54, ref: '22716' },
+          { date: '2025-06-23', amount: 647.54, ref: '22716' },
+          { date: '2025-06-30', amount: 647.54, ref: '22716' },
+          { date: '2025-07-07', amount: 647.54, ref: '22716' },
+          { date: '2025-07-14', amount: 647.54, ref: '22716' },
+          { date: '2025-07-21', amount: 647.54, ref: '22716' },
+          { date: '2025-07-28', amount: 647.54, ref: '22716' },
+          { date: '2025-08-05', amount: 647.54, ref: '22716' },
+          { date: '2025-08-11', amount: 647.54, ref: '22716' },
+          { date: '2025-08-18', amount: 647.54, ref: '22716' },
+          { date: '2025-08-25', amount: 644.28, ref: '22716' },
+
+          // Ref 22475 ($10001.00 @ 45.56%)
+          { date: '2025-02-05', amount: 817.31, ref: '22475' },
+          { date: '2025-02-12', amount: 817.31, ref: '22475' },
+          { date: '2025-02-19', amount: 817.31, ref: '22475' },
+          { date: '2025-02-26', amount: 817.31, ref: '22475' },
+          { date: '2025-03-05', amount: 817.31, ref: '22475' },
+          { date: '2025-03-12', amount: 817.31, ref: '22475' },
+          { date: '2025-03-19', amount: 817.31, ref: '22475' },
+          { date: '2025-03-26', amount: 817.31, ref: '22475' },
+          { date: '2025-04-02', amount: 817.31, ref: '22475' },
+          { date: '2025-04-09', amount: 817.31, ref: '22475' },
+          { date: '2025-04-16', amount: 817.31, ref: '22475' },
+          { date: '2025-04-23', amount: 817.31, ref: '22475' },
+          { date: '2025-04-30', amount: 815.58, ref: '22475' },
+
+          // Ref 22996 ($20000.00 @ 40.57%)
+          { date: '2025-04-02', amount: 596.77, ref: '22996' },
+          { date: '2025-04-09', amount: 596.77, ref: '22996' },
+          { date: '2025-04-16', amount: 596.77, ref: '22996' },
+          { date: '2025-04-23', amount: 596.77, ref: '22996' },
+          { date: '2025-04-30', amount: 596.77, ref: '22996' },
+          { date: '2025-05-07', amount: 596.77, ref: '22996' },
+          { date: '2025-05-14', amount: 596.77, ref: '22996' },
+          { date: '2025-05-21', amount: 596.77, ref: '22996' },
+          { date: '2025-05-28', amount: 596.77, ref: '22996' },
+          { date: '2025-06-04', amount: 596.77, ref: '22996' },
+          { date: '2025-06-11', amount: 596.77, ref: '22996' },
+          { date: '2025-06-18', amount: 596.77, ref: '22996' },
+          { date: '2025-06-25', amount: 596.77, ref: '22996' },
+          { date: '2025-07-02', amount: 596.77, ref: '22996' },
+          { date: '2025-07-09', amount: 596.77, ref: '22996' },
+          { date: '2025-07-16', amount: 596.77, ref: '22996' },
+          { date: '2025-07-23', amount: 596.77, ref: '22996' },
+          { date: '2025-07-30', amount: 596.77, ref: '22996' },
+          { date: '2025-08-06', amount: 596.77, ref: '22996' },
+          { date: '2025-08-13', amount: 596.77, ref: '22996' },
+          { date: '2025-08-20', amount: 596.77, ref: '22996' },
+          { date: '2025-08-27', amount: 596.77, ref: '22996' },
+          { date: '2025-09-03', amount: 596.77, ref: '22996' },
+          { date: '2025-09-10', amount: 596.77, ref: '22996' },
+          { date: '2025-09-17', amount: 596.77, ref: '22996' },
+          { date: '2025-09-24', amount: 596.77, ref: '22996' },
+          { date: '2025-10-01', amount: 596.77, ref: '22996' },
+          { date: '2025-10-08', amount: 596.77, ref: '22996' },
+          { date: '2025-10-15', amount: 596.77, ref: '22996' },
+          { date: '2025-10-22', amount: 596.77, ref: '22996' },
+          { date: '2025-10-29', amount: 596.77, ref: '22996' },
+          { date: '2025-11-05', amount: 596.77, ref: '22996' },
+          { date: '2025-11-12', amount: 596.77, ref: '22996' },
+          { date: '2025-11-19', amount: 596.77, ref: '22996' },
+          { date: '2025-11-26', amount: 596.77, ref: '22996' },
+          { date: '2025-12-03', amount: 596.77, ref: '22996' },
+          { date: '2025-12-10', amount: 596.77, ref: '22996' },
+          { date: '2025-12-17', amount: 596.77, ref: '22996' },
+          { date: '2025-12-24', amount: 585.93, ref: '22996' },
+        ];
+
+        // --- Calendar Logic ---
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthYearDisplay = document.getElementById('month-year');
+        const prevMonthButton = document.getElementById('prev-month');
+        const nextMonthButton = document.getElementById('next-month');
+        const totalRemainingBalanceDisplay = document.getElementById('total-remaining-balance-display');
+
+        // "Today's" date for calculation purposes, set to May 7, 2025 as per user context
+        const todayFixed = new Date(2025, 4, 7); // Month is 0-indexed (4 = May)
+        // To ensure time component doesn't affect date comparisons, set to start of day
+        todayFixed.setHours(0, 0, 0, 0);
+
+        const currentYearFixed = todayFixed.getFullYear();
+        const currentMonthFixed = todayFixed.getMonth();
+        const currentDayFixed = todayFixed.getDate();
+
+        let displayedYear = currentYearFixed;
+        let displayedMonth = currentMonthFixed;
+
+        // Total initial loan amount from all schedules
+        const initialTotalLoanAmount = 55003.00;
+
+        /**
+         * Calculates and displays the total remaining balance.
+         */
+        function updateTotalRemainingBalance() {
+            let totalPaidToDate = 0;
+            payments.forEach(payment => {
+                // Parse payment.date string "YYYY-MM-DD" into a Date object
+                const [year, month, day] = payment.date.split('-').map(Number);
+                const paymentDate = new Date(year, month - 1, day); // month is 0-indexed for Date constructor
+                paymentDate.setHours(0,0,0,0); // Normalize to start of day
+
+                if (paymentDate <= todayFixed) {
+                    totalPaidToDate += payment.amount;
+                }
+            });
+
+            const remainingBalance = initialTotalLoanAmount - totalPaidToDate;
+            totalRemainingBalanceDisplay.textContent = `Total Remaining Balance (as of ${todayFixed.toLocaleDateString('en-CA')}): ${formatCurrency(remainingBalance)}`;
+        }
+
+
+        /**
+         * Formats a number as currency (USD).
+         * @param {number} amount - The amount to format.
+         * @returns {string} Formatted currency string.
+         */
+        function formatCurrency(amount) {
+            return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+        }
+
+        /**
+         * Generates and displays the calendar for a given month and year.
+         * @param {number} year - The full year (e.g., 2025).
+         * @param {number} month - The month (0-indexed, 0 = January).
+         */
+        function generateCalendar(year, month) {
+            calendarGrid.innerHTML = ''; // Clear previous grid
+
+            const monthName = new Date(year, month).toLocaleString('en-US', { month: 'long' });
+            monthYearDisplay.textContent = `${monthName} ${year}`;
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            let weeklyTotal = 0;
+
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const blankCell = document.createElement('div');
+                blankCell.className = 'bg-gray-50 border border-gray-200';
+                calendarGrid.appendChild(blankCell);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-cell bg-white border border-gray-200 overflow-y-auto';
+
+                const dateNumberSpan = document.createElement('span');
+                dateNumberSpan.textContent = day;
+                dateNumberSpan.className = 'date-number';
+
+                // Highlight "today" based on todayFixed (May 7, 2025)
+                const cellDate = new Date(year, month, day);
+                cellDate.setHours(0,0,0,0); // Normalize for comparison
+
+                if (cellDate.getTime() === todayFixed.getTime()) {
+                    const todayDiv = document.createElement('div');
+                    todayDiv.className = 'today-highlight';
+                    todayDiv.textContent = day;
+                    cell.appendChild(todayDiv);
+                }
+                cell.appendChild(dateNumberSpan);
+
+                const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const paymentsForDay = payments.filter(p => p.date === cellDateStr);
+                const dailyTotal = paymentsForDay.reduce((sum, p) => sum + p.amount, 0);
+                weeklyTotal += dailyTotal;
+
+                paymentsForDay.forEach(payment => {
+                    const paymentDiv = document.createElement('div');
+                    paymentDiv.className = 'payment-entry';
+                    const formattedAmount = formatCurrency(payment.amount);
+                    paymentDiv.textContent = `${formattedAmount} (Ref: ${payment.ref})`;
+                    paymentDiv.title = `${formattedAmount} (Ref: ${payment.ref})`;
+                    cell.appendChild(paymentDiv);
+                });
+
+                const dayOfWeek = new Date(year, month, day).getDay();
+                if (dayOfWeek === 6 || day === daysInMonth) {
+                    if (weeklyTotal > 0) {
+                        const weeklyTotalDiv = document.createElement('div');
+                        weeklyTotalDiv.className = 'weekly-total';
+                        weeklyTotalDiv.textContent = `Week: ${formatCurrency(weeklyTotal)}`;
+                        weeklyTotalDiv.title = `Total for week ending ${cellDateStr}: ${formatCurrency(weeklyTotal)}`;
+                        cell.appendChild(weeklyTotalDiv);
+                    }
+                    weeklyTotal = 0;
+                }
+                calendarGrid.appendChild(cell);
+            }
+
+            const totalCellsFilled = firstDayOfMonth + daysInMonth;
+            const remainingCells = (7 - (totalCellsFilled % 7)) % 7;
+            for (let i = 0; i < remainingCells; i++) {
+                const blankCell = document.createElement('div');
+                blankCell.className = 'bg-gray-50 border border-gray-200';
+                calendarGrid.appendChild(blankCell);
+            }
+        }
+
+        // --- Event Listeners ---
+        prevMonthButton.addEventListener('click', () => {
+            displayedMonth--;
+            if (displayedMonth < 0) {
+                displayedMonth = 11;
+                displayedYear--;
+            }
+            generateCalendar(displayedYear, displayedMonth);
+        });
+
+        nextMonthButton.addEventListener('click', () => {
+            displayedMonth++;
+            if (displayedMonth > 11) {
+                displayedMonth = 0;
+                displayedYear++;
+            }
+            generateCalendar(displayedYear, displayedMonth);
+        });
+
+        // --- Initial Load ---
+        updateTotalRemainingBalance(); // Calculate and display remaining balance once on load
+        // Generate the calendar for the month of "todayFixed" (May 2025) or January 2025
+        generateCalendar(displayedYear, displayedMonth); // Will use May 2025
+        // generateCalendar(2025, 0); // To start with January 2025
+
+    </script>
+
+</body>
+</html>
