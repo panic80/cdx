@@ -75,9 +75,9 @@
             color: #6b7280; /* Tailwind gray-500 */
             z-index: 5; /* Ensure it's below the today highlight */
         }
-         /* Adjust date number position when today highlight is present */
+         /* Adjust date number color when today highlight is present */
         .today-highlight + .date-number {
-             color: #1f2937; /* Tailwind gray-800 - Ensure it's visible within highlight */
+             color: #1f2937 !important; /* Tailwind gray-800 - Ensure it's visible within highlight */
         }
         /* Style for the total remaining balance display */
         #total-remaining-balance-display {
@@ -120,7 +120,7 @@
     </div>
 
     <script>
-        // --- Payment Data ---
+        // --- Payment Data (Unchanged) ---
         const payments = [
           // Ref 22239 ($10001.00 @ 40.60%)
           { date: '2025-01-14', amount: 812.00, ref: '22239' },
@@ -229,39 +229,41 @@
         const nextMonthButton = document.getElementById('next-month');
         const totalRemainingBalanceDisplay = document.getElementById('total-remaining-balance-display');
 
-        // "Today's" date for calculation purposes, set to May 7, 2025 as per user context
-        const todayFixed = new Date(2025, 4, 7); // Month is 0-indexed (4 = May)
-        // To ensure time component doesn't affect date comparisons, set to start of day
-        todayFixed.setHours(0, 0, 0, 0);
+        // Get the actual current date
+        const todayActual = new Date();
+        // Normalize to the start of the day for accurate date comparisons
+        todayActual.setHours(0, 0, 0, 0);
 
-        const currentYearFixed = todayFixed.getFullYear();
-        const currentMonthFixed = todayFixed.getMonth();
-        const currentDayFixed = todayFixed.getDate();
+        // These variables will be used for highlighting and initial display
+        const currentYearActual = todayActual.getFullYear();
+        const currentMonthActual = todayActual.getMonth(); // 0-indexed
+        const currentDayActual = todayActual.getDate();
 
-        let displayedYear = currentYearFixed;
-        let displayedMonth = currentMonthFixed;
+        // Set the initially displayed month and year to the current month and year
+        let displayedYear = currentYearActual;
+        let displayedMonth = currentMonthActual;
 
         // Total initial loan amount from all schedules
         const initialTotalLoanAmount = 55003.00;
 
         /**
-         * Calculates and displays the total remaining balance.
+         * Calculates and displays the total remaining balance based on todayActual.
          */
         function updateTotalRemainingBalance() {
             let totalPaidToDate = 0;
             payments.forEach(payment => {
-                // Parse payment.date string "YYYY-MM-DD" into a Date object
                 const [year, month, day] = payment.date.split('-').map(Number);
-                const paymentDate = new Date(year, month - 1, day); // month is 0-indexed for Date constructor
-                paymentDate.setHours(0,0,0,0); // Normalize to start of day
+                const paymentDate = new Date(year, month - 1, day); // month is 0-indexed
+                paymentDate.setHours(0,0,0,0); // Normalize
 
-                if (paymentDate <= todayFixed) {
+                if (paymentDate <= todayActual) { // Compare with actual current date
                     totalPaidToDate += payment.amount;
                 }
             });
 
             const remainingBalance = initialTotalLoanAmount - totalPaidToDate;
-            totalRemainingBalanceDisplay.textContent = `Total Remaining Balance (as of ${todayFixed.toLocaleDateString('en-CA')}): ${formatCurrency(remainingBalance)}`;
+            // Display the "as of" date using todayActual
+            totalRemainingBalanceDisplay.textContent = `Total Remaining Balance (as of ${todayActual.toLocaleDateString('en-CA')}): ${formatCurrency(remainingBalance)}`;
         }
 
 
@@ -289,12 +291,14 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             let weeklyTotal = 0;
 
+            // Create blank cells for days before the 1st of the month
             for (let i = 0; i < firstDayOfMonth; i++) {
                 const blankCell = document.createElement('div');
                 blankCell.className = 'bg-gray-50 border border-gray-200';
                 calendarGrid.appendChild(blankCell);
             }
 
+            // Create cells for each day of the month
             for (let day = 1; day <= daysInMonth; day++) {
                 const cell = document.createElement('div');
                 cell.className = 'calendar-cell bg-white border border-gray-200 overflow-y-auto';
@@ -303,17 +307,18 @@
                 dateNumberSpan.textContent = day;
                 dateNumberSpan.className = 'date-number';
 
-                // Highlight "today" based on todayFixed (May 7, 2025)
+                // Highlight "today" based on actual current date
                 const cellDate = new Date(year, month, day);
                 cellDate.setHours(0,0,0,0); // Normalize for comparison
 
-                if (cellDate.getTime() === todayFixed.getTime()) {
+                // Check if the cell's date matches todayActual's date components
+                if (year === currentYearActual && month === currentMonthActual && day === currentDayActual) {
                     const todayDiv = document.createElement('div');
                     todayDiv.className = 'today-highlight';
-                    todayDiv.textContent = day;
+                    todayDiv.textContent = day; // Show day number in highlight
                     cell.appendChild(todayDiv);
                 }
-                cell.appendChild(dateNumberSpan);
+                cell.appendChild(dateNumberSpan); // Always add the date number
 
                 const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const paymentsForDay = payments.filter(p => p.date === cellDateStr);
@@ -330,7 +335,7 @@
                 });
 
                 const dayOfWeek = new Date(year, month, day).getDay();
-                if (dayOfWeek === 6 || day === daysInMonth) {
+                if (dayOfWeek === 6 || day === daysInMonth) { // If Saturday or last day of month
                     if (weeklyTotal > 0) {
                         const weeklyTotalDiv = document.createElement('div');
                         weeklyTotalDiv.className = 'weekly-total';
@@ -338,11 +343,12 @@
                         weeklyTotalDiv.title = `Total for week ending ${cellDateStr}: ${formatCurrency(weeklyTotal)}`;
                         cell.appendChild(weeklyTotalDiv);
                     }
-                    weeklyTotal = 0;
+                    weeklyTotal = 0; // Reset for the next week
                 }
                 calendarGrid.appendChild(cell);
             }
 
+            // Add blank cells to fill the remaining grid if needed
             const totalCellsFilled = firstDayOfMonth + daysInMonth;
             const remainingCells = (7 - (totalCellsFilled % 7)) % 7;
             for (let i = 0; i < remainingCells; i++) {
@@ -356,7 +362,7 @@
         prevMonthButton.addEventListener('click', () => {
             displayedMonth--;
             if (displayedMonth < 0) {
-                displayedMonth = 11;
+                displayedMonth = 11; // December
                 displayedYear--;
             }
             generateCalendar(displayedYear, displayedMonth);
@@ -365,17 +371,16 @@
         nextMonthButton.addEventListener('click', () => {
             displayedMonth++;
             if (displayedMonth > 11) {
-                displayedMonth = 0;
+                displayedMonth = 0; // January
                 displayedYear++;
             }
             generateCalendar(displayedYear, displayedMonth);
         });
 
         // --- Initial Load ---
-        updateTotalRemainingBalance(); // Calculate and display remaining balance once on load
-        // Generate the calendar for the month of "todayFixed" (May 2025) or January 2025
-        generateCalendar(displayedYear, displayedMonth); // Will use May 2025
-        // generateCalendar(2025, 0); // To start with January 2025
+        updateTotalRemainingBalance(); // Calculate and display remaining balance using actual current date
+        // Generate the calendar for the actual current month on page load
+        generateCalendar(displayedYear, displayedMonth);
 
     </script>
 
