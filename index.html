@@ -220,6 +220,59 @@
           { date: '2025-12-10', amount: 596.77, ref: '22996' },
           { date: '2025-12-17', amount: 596.77, ref: '22996' },
           { date: '2025-12-24', amount: 585.93, ref: '22996' },
+
+          // --- NEW SCHEDULE 1 ---
+          { date: '2025-07-11', amount: 303.80 },
+          { date: '2025-07-18', amount: 303.80 },
+          { date: '2025-07-25', amount: 303.80 },
+          { date: '2025-08-01', amount: 303.80 },
+          { date: '2025-08-08', amount: 303.80 },
+          { date: '2025-08-15', amount: 303.80 },
+          { date: '2025-08-22', amount: 303.80 },
+          { date: '2025-08-29', amount: 303.80 },
+          { date: '2025-09-05', amount: 303.80 },
+          { date: '2025-09-12', amount: 303.80 },
+          { date: '2025-09-19', amount: 303.80 },
+          { date: '2025-09-26', amount: 303.80 },
+          { date: '2025-10-03', amount: 303.80 },
+          { date: '2025-10-10', amount: 303.80 },
+          { date: '2025-10-17', amount: 303.80 },
+          { date: '2025-10-24', amount: 303.80 },
+          { date: '2025-10-31', amount: 303.80 },
+          { date: '2025-11-07', amount: 303.80 },
+          { date: '2025-11-14', amount: 303.80 },
+          { date: '2025-11-21', amount: 303.80 },
+          { date: '2025-11-28', amount: 303.80 },
+          { date: '2025-12-05', amount: 303.80 },
+          { date: '2025-12-12', amount: 303.80 },
+          { date: '2025-12-19', amount: 303.80 },
+          { date: '2025-12-29', amount: 303.80 },
+          { date: '2026-01-05', amount: 303.80 },
+          { date: '2026-01-09', amount: 303.80 },
+          { date: '2026-01-16', amount: 303.80 },
+          { date: '2026-01-23', amount: 303.80 },
+          { date: '2026-01-30', amount: 303.80 },
+          { date: '2026-02-06', amount: 303.80 },
+          { date: '2026-02-13', amount: 303.80 },
+          { date: '2026-02-20', amount: 303.80 },
+          { date: '2026-02-27', amount: 303.80 },
+          { date: '2026-03-06', amount: 303.80 },
+          { date: '2026-03-13', amount: 303.80 },
+          { date: '2026-03-20', amount: 303.80 },
+          { date: '2026-03-27', amount: 303.80 },
+          { date: '2026-04-07', amount: 301.31 },
+
+          // --- NEW SCHEDULE 2 ---
+          { date: '2025-08-05', amount: 1158.78 },
+          { date: '2025-08-11', amount: 1158.78 },
+          { date: '2025-08-18', amount: 1158.78 },
+          { date: '2025-08-25', amount: 1158.78 },
+          { date: '2025-09-02', amount: 1158.78 },
+          { date: '2025-09-08', amount: 1158.78 },
+          { date: '2025-09-15', amount: 1158.78 },
+          { date: '2025-09-22', amount: 1158.78 },
+          { date: '2025-09-29', amount: 1158.78 },
+          { date: '2025-10-06', amount: 1.59 },
         ];
 
         // --- Calendar Logic ---
@@ -244,7 +297,7 @@
         let displayedMonth = currentMonthActual;
 
         // Total initial loan amount from all schedules
-        const initialTotalLoanAmount = 55003.00;
+        const initialTotalLoanAmount = 75005.00;
 
         /**
          * Calculates and displays the total remaining balance based on todayActual.
@@ -329,8 +382,12 @@
                     const paymentDiv = document.createElement('div');
                     paymentDiv.className = 'payment-entry';
                     const formattedAmount = formatCurrency(payment.amount);
-                    paymentDiv.textContent = `${formattedAmount} (Ref: ${payment.ref})`;
-                    paymentDiv.title = `${formattedAmount} (Ref: ${payment.ref})`;
+                    let displayText = formattedAmount;
+                    if (payment.ref) {
+                        displayText += ` (Ref: ${payment.ref})`;
+                    }
+                    paymentDiv.textContent = displayText;
+                    paymentDiv.title = displayText;
                     cell.appendChild(paymentDiv);
                 });
 
