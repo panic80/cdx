@@ -18,18 +18,25 @@
 
         /* Calendar Cell Animations & Mobile Optimization */
         .calendar-cell { 
-            min-height: 100px; /* Smaller height for mobile */
-            transition: background-color 0.2s; 
+            transition: all 0.2s; 
+            cursor: pointer;
         }
+        /* Desktop Height */
         @media (min-width: 768px) {
-            .calendar-cell { 
-                min-height: 120px; /* Larger height for desktop */
-            }
+            .calendar-cell { min-height: 120px; }
         }
-        .calendar-cell:hover { background-color: #f8fafc; }
+        /* Mobile Height */
+        @media (max-width: 767px) {
+            .calendar-cell { min-height: 60px; }
+        }
 
-        /* Tooltip for overflow content */
-        .cell-content:hover .overflow-tooltip { display: block; }
+        .calendar-cell:hover { background-color: #f8fafc; }
+        .calendar-cell.selected-day { background-color: #f0fdf4; box-shadow: inset 0 0 0 2px #10b981; }
+
+        /* Tooltip for overflow content (Desktop only) */
+        @media (min-width: 768px) {
+            .cell-content:hover .overflow-tooltip { display: block; }
+        }
         
         /* Weekly total styling */
         .weekly-total {
@@ -126,8 +133,20 @@
             </div>
             
             <div class="overflow-x-auto custom-scroll">
-                <div id="calendar-grid" class="grid grid-cols-7 min-w-[800px] md:min-w-0 bg-slate-200 gap-px border-b border-slate-200">
+                <!-- Removed fixed width to allow full responsiveness on mobile -->
+                <div id="calendar-grid" class="grid grid-cols-7 min-w-full bg-slate-200 gap-px border-b border-slate-200">
                 </div>
+            </div>
+        </div>
+
+        <!-- Selected Day Details (Visible mostly on Mobile, but helpful on desktop too) -->
+        <div id="day-details-container" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hidden">
+            <div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-2">
+                <h3 class="font-bold text-slate-800" id="detail-date-title">Selected Date</h3>
+                <span class="text-xs font-medium text-slate-500" id="detail-total">Total: $0.00</span>
+            </div>
+            <div id="detail-list" class="space-y-2">
+                <!-- Dynamic Content -->
             </div>
         </div>
         
@@ -225,6 +244,7 @@
         const state = {
             currentYear: todayActual.getFullYear(),
             currentMonth: todayActual.getMonth(),
+            selectedDate: todayActual, // New state for day selection
             // Initialize with all filters active
             activeFilters: new Set(Object.keys(colorPalettes).filter(k => k !== 'default'))
         };
@@ -239,11 +259,19 @@
             dashMonthName: document.getElementById('dash-month-name'),
             dashNextAmt: document.getElementById('dash-next-amount'),
             dashNextDate: document.getElementById('dash-next-date'),
-            filterContainer: document.getElementById('filter-container')
+            filterContainer: document.getElementById('filter-container'),
+            detailContainer: document.getElementById('day-details-container'),
+            detailTitle: document.getElementById('detail-date-title'),
+            detailTotal: document.getElementById('detail-total'),
+            detailList: document.getElementById('detail-list')
         };
 
         // --- Utilities ---
         const formatCurrency = (amt) => amt.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+        const formatCompact = (amt) => {
+            if (amt >= 1000) return '$' + (amt / 1000).toFixed(1) + 'k';
+            return '$' + Math.round(amt);
+        };
         const getStyle = (ref) => colorPalettes[ref] || colorPalettes['default'];
 
         // --- Core Logic ---
@@ -275,6 +303,7 @@
                     initFilters(); // Re-render buttons
                     updateDashboard();
                     renderCalendar();
+                    updateDetailView(); // Refresh details if filter changes
                 };
                 els.filterContainer.appendChild(btn);
             });
@@ -332,6 +361,41 @@
             }
         }
 
+        function updateDetailView() {
+            const dateStr = `${state.selectedDate.getFullYear()}-${String(state.selectedDate.getMonth() + 1).padStart(2, '0')}-${String(state.selectedDate.getDate()).padStart(2, '0')}`;
+            const activePayments = getFilteredPayments();
+            const dayPayments = activePayments.filter(p => p.date === dateStr);
+            const daySum = dayPayments.reduce((acc, curr) => acc + curr.amount, 0);
+
+            // Update Title
+            els.detailTitle.textContent = state.selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            els.detailTotal.textContent = `Total: ${formatCurrency(daySum)}`;
+            
+            // Populate List
+            els.detailList.innerHTML = '';
+            if (dayPayments.length === 0) {
+                els.detailList.innerHTML = '<div class="text-sm text-slate-400 italic">No payments for this date.</div>';
+                els.detailContainer.classList.add('hidden'); // Optional: Hide if empty, or keep open saying "No payments"
+                // Let's keep it visible only if user clicked it, but "Hidden" class is managed by click event usually. 
+                // For now, let's just make sure it's visible if we have a selection.
+                els.detailContainer.classList.remove('hidden');
+            } else {
+                els.detailContainer.classList.remove('hidden');
+                dayPayments.forEach(p => {
+                    const style = getStyle(p.ref);
+                    const row = document.createElement('div');
+                    row.className = `flex justify-between items-center p-3 rounded-lg border ${style.bg} ${style.border}`;
+                    row.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-white/50 ${style.text}">Ref ${p.ref}</span>
+                        </div>
+                        <span class="font-bold ${style.text}">${formatCurrency(p.amount)}</span>
+                    `;
+                    els.detailList.appendChild(row);
+                });
+            }
+        }
+
         function renderCalendar() {
             const year = state.currentYear;
             const month = state.currentMonth;
@@ -345,14 +409,13 @@
 
             const activePayments = getFilteredPayments();
             
-            // We want a full rectangular grid (6 rows usually cover all months)
+            // Full grid
             const totalSlots = 42; 
             
             let rowWeeklyTotal = 0;
             
-            // Determine max visible based on screen width
+            // Check for Mobile
             const isMobile = window.innerWidth < 768;
-            const maxVisible = isMobile ? 2 : 3;
 
             for (let i = 0; i < totalSlots; i++) {
                 // Determine date for this cell
@@ -362,19 +425,16 @@
                 let isCurrentMonth = true;
 
                 if (i < firstDayOfMonth) {
-                    // Previous Month padding
                     cellDay = prevMonthDate.getDate() - (firstDayOfMonth - i - 1);
                     cellMonth = month - 1;
                     if (cellMonth < 0) { cellMonth = 11; cellYear--; }
                     isCurrentMonth = false;
                 } else if (i >= firstDayOfMonth + daysInMonth) {
-                    // Next Month padding
                     cellDay = i - (firstDayOfMonth + daysInMonth) + 1;
                     cellMonth = month + 1;
                     if (cellMonth > 11) { cellMonth = 0; cellYear++; }
                     isCurrentMonth = false;
                 } else {
-                    // Current Month
                     cellDay = i - firstDayOfMonth + 1;
                 }
 
@@ -383,11 +443,19 @@
                 const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(cellDay).padStart(2, '0')}`;
                 
                 const isToday = dateObj.getTime() === todayActual.getTime();
-                const isPast = dateObj < todayActual;
+                const isSelected = state.selectedDate && dateObj.getTime() === state.selectedDate.getTime();
 
                 // --- Build Cell ---
                 const cell = document.createElement('div');
                 cell.className = `calendar-cell relative p-1 md:p-2 flex flex-col gap-1 border-r border-b border-slate-200 ${isCurrentMonth ? 'bg-white' : 'bg-slate-50'}`;
+                if (isSelected) cell.classList.add('selected-day');
+
+                // Click Handler for Day Selection
+                cell.onclick = () => {
+                    state.selectedDate = dateObj;
+                    renderCalendar(); // Re-render to show selection highlight
+                    updateDetailView(); // Update details panel
+                };
 
                 // Date Number
                 const headerDiv = document.createElement('div');
@@ -410,57 +478,68 @@
                 const daySum = dayPayments.reduce((acc, curr) => acc + curr.amount, 0);
                 rowWeeklyTotal += daySum;
 
-                // Render Payments
+                // Render Content Based on Device
                 const contentWrapper = document.createElement('div');
-                contentWrapper.className = "cell-content flex-1 flex flex-col gap-0.5 md:gap-1 relative"; // relative for tooltip positioning
+                contentWrapper.className = "cell-content flex-1 flex flex-col gap-0.5 md:gap-1 relative";
 
-                const displayList = dayPayments.slice(0, maxVisible);
-                const hiddenCount = dayPayments.length - maxVisible;
+                if (isMobile) {
+                    // Mobile View: Show Total Summary Only
+                    if (daySum > 0) {
+                        const summaryPill = document.createElement('div');
+                        summaryPill.className = "text-[10px] text-center py-1 rounded bg-slate-100 text-slate-700 font-bold border border-slate-200";
+                        summaryPill.textContent = formatCompact(daySum);
+                        // Highlight high amounts? Optional.
+                        if (daySum > 1000) summaryPill.classList.add('bg-orange-50', 'text-orange-700', 'border-orange-200');
+                        contentWrapper.appendChild(summaryPill);
+                    }
+                } else {
+                    // Desktop View: Show Individual Pills
+                    const maxVisible = 3;
+                    const displayList = dayPayments.slice(0, maxVisible);
+                    const hiddenCount = dayPayments.length - maxVisible;
 
-                displayList.forEach(p => {
-                    const style = getStyle(p.ref);
-                    const pill = document.createElement('div');
-                    // Mobile: hide ref text, Desktop: show all
-                    pill.className = `text-[9px] md:text-[10px] sm:text-xs px-1 md:px-1.5 py-0.5 rounded border truncate cursor-default transition-transform hover:scale-105 ${style.bg} ${style.border} ${style.text} ${style.hover} ${isPast ? 'is-past' : ''}`;
-                    pill.innerHTML = `<span class="font-bold">${formatCurrency(p.amount)}</span>`;
-                    contentWrapper.appendChild(pill);
-                });
-
-                if (hiddenCount > 0) {
-                    const moreBadge = document.createElement('div');
-                    moreBadge.className = "text-[9px] md:text-[10px] text-slate-400 font-medium pl-1";
-                    moreBadge.textContent = `+${hiddenCount} more`;
-                    contentWrapper.appendChild(moreBadge);
-                }
-
-                // Hover Tooltip (Only if payments exist)
-                if (dayPayments.length > 0) {
-                    const tooltip = document.createElement('div');
-                    tooltip.className = "overflow-tooltip hidden absolute z-20 left-0 top-full mt-[-10px] w-40 md:w-48 bg-white shadow-xl border border-slate-200 rounded-lg p-2 md:p-3 max-h-56 overflow-y-auto";
-                    
-                    const ttHeader = document.createElement('div');
-                    ttHeader.className = "text-xs font-bold text-slate-700 mb-2 border-b pb-1";
-                    ttHeader.textContent = `${new Date(dateStr).toLocaleDateString('en-US', {month:'short', day:'numeric'})} Total: ${formatCurrency(daySum)}`;
-                    tooltip.appendChild(ttHeader);
-
-                    dayPayments.forEach(p => {
+                    displayList.forEach(p => {
                         const style = getStyle(p.ref);
-                        const row = document.createElement('div');
-                        row.className = `text-xs mb-1.5 flex justify-between items-center ${style.text}`;
-                        row.innerHTML = `<span class="opacity-75">Ref ${p.ref}</span> <span class="font-bold">${formatCurrency(p.amount)}</span>`;
-                        tooltip.appendChild(row);
+                        const pill = document.createElement('div');
+                        pill.className = `text-[10px] sm:text-xs px-1.5 py-0.5 rounded border truncate cursor-default transition-transform hover:scale-105 ${style.bg} ${style.border} ${style.text} ${style.hover}`;
+                        pill.innerHTML = `<span class="font-bold">${formatCurrency(p.amount)}</span>`;
+                        contentWrapper.appendChild(pill);
                     });
-                    contentWrapper.appendChild(tooltip);
+
+                    if (hiddenCount > 0) {
+                        const moreBadge = document.createElement('div');
+                        moreBadge.className = "text-[10px] text-slate-400 font-medium pl-1";
+                        moreBadge.textContent = `+${hiddenCount} more`;
+                        contentWrapper.appendChild(moreBadge);
+                    }
+                    
+                    // Add Tooltip logic (Same as before)
+                    if (dayPayments.length > 0) {
+                        const tooltip = document.createElement('div');
+                        tooltip.className = "overflow-tooltip hidden absolute z-20 left-0 top-full mt-[-10px] w-48 bg-white shadow-xl border border-slate-200 rounded-lg p-3 max-h-56 overflow-y-auto";
+                        const ttHeader = document.createElement('div');
+                        ttHeader.className = "text-xs font-bold text-slate-700 mb-2 border-b pb-1";
+                        ttHeader.textContent = `Total: ${formatCurrency(daySum)}`;
+                        tooltip.appendChild(ttHeader);
+                        dayPayments.forEach(p => {
+                            const style = getStyle(p.ref);
+                            const row = document.createElement('div');
+                            row.className = `text-xs mb-1.5 flex justify-between items-center ${style.text}`;
+                            row.innerHTML = `<span class="opacity-75">Ref ${p.ref}</span> <span class="font-bold">${formatCurrency(p.amount)}</span>`;
+                            tooltip.appendChild(row);
+                        });
+                        contentWrapper.appendChild(tooltip);
+                    }
                 }
 
                 cell.appendChild(contentWrapper);
 
-                // Weekly Total (End of row or end of grid)
+                // Weekly Total (Desktop Only usually, but let's keep small on mobile)
                 if ((i + 1) % 7 === 0) {
                     if (rowWeeklyTotal > 0) {
                         const wTotal = document.createElement('div');
                         wTotal.className = "weekly-total mt-auto text-right text-[9px] md:text-[10px] font-bold text-orange-700 py-1 px-1 rounded-sm";
-                        wTotal.textContent = `Wk: ${formatCurrency(rowWeeklyTotal)}`;
+                        wTotal.textContent = isMobile ? formatCompact(rowWeeklyTotal) : `Wk: ${formatCurrency(rowWeeklyTotal)}`;
                         cell.appendChild(wTotal);
                     }
                     rowWeeklyTotal = 0;
@@ -488,8 +567,10 @@
         document.getElementById('jump-today').addEventListener('click', () => {
             state.currentYear = todayActual.getFullYear();
             state.currentMonth = todayActual.getMonth();
+            state.selectedDate = todayActual;
             updateDashboard();
             renderCalendar();
+            updateDetailView();
         });
         
         // Handle window resize for responsive rendering
@@ -500,6 +581,7 @@
         // --- Init ---
         initFilters();
         updateDashboard();
+        updateDetailView();
         renderCalendar();
 
     </script>
