@@ -3,386 +3,505 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weekly Payment Calendar</title>
+    <title>Smart Payment Calendar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        /* Use Inter font */
-        body {
-            font-family: 'Inter', sans-serif;
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Calendar Cell Animations & Mobile Optimization */
+        .calendar-cell { 
+            min-height: 100px; /* Smaller height for mobile */
+            transition: background-color 0.2s; 
         }
-        /* Style for payment entries */
-        .payment-entry {
-            background-color: #dbeafe; /* Tailwind blue-100 */
-            border: 1px solid #93c5fd; /* Tailwind blue-300 */
-            color: #1e40af; /* Tailwind blue-800 */
-            padding: 2px 4px;
-            border-radius: 4px;
-            font-size: 0.75rem; /* text-xs */
-            margin-top: 2px;
-            display: block; /* Make each payment take its own line */
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+        @media (min-width: 768px) {
+            .calendar-cell { 
+                min-height: 120px; /* Larger height for desktop */
+            }
         }
-         /* Style for the weekly total */
+        .calendar-cell:hover { background-color: #f8fafc; }
+
+        /* Tooltip for overflow content */
+        .cell-content:hover .overflow-tooltip { display: block; }
+        
+        /* Weekly total styling */
         .weekly-total {
-            background-color: #fef9c3; /* Tailwind yellow-100 */
-            border-top: 1px solid #fde047; /* Tailwind yellow-400 */
-            color: #713f12; /* Tailwind yellow-900 */
-            padding: 2px 4px;
-            font-size: 0.75rem; /* text-xs */
-            font-weight: 600; /* semibold */
-            margin-top: 4px;
-            text-align: center;
-            display: block;
-            position: absolute; /* Position relative to parent cell */
-            bottom: 2px; /* Stick to the bottom */
-            left: 2px;
-            right: 2px;
-            border-radius: 4px;
-        }
-        /* Style for the current day highlight */
-        .today-highlight {
-            background-color: #fef08a; /* Tailwind yellow-200 */
-            border-radius: 50%;
-            width: 1.75rem; /* Adjust size */
-            height: 1.75rem; /* Adjust size */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            position: absolute; /* Position relative to parent cell */
-            top: 0.15rem; /* Adjust positioning */
-            right: 0.15rem; /* Adjust positioning */
-            z-index: 10; /* Ensure it's above the date number if overlapping */
-        }
-         /* Ensure calendar cells have minimum height and relative positioning */
-        .calendar-cell {
-            min-height: 90px; /* Increased min-height slightly for weekly total */
-            position: relative; /* Needed for absolute positioning of children */
-            padding-top: 1.75rem; /* Space for the date number */
-            padding-bottom: 1.5rem; /* Extra space at bottom for weekly total */
-            padding-left: 0.25rem;
-            padding-right: 0.25rem;
-        }
-        /* Position date number in top-right corner */
-        .date-number {
-            position: absolute;
-            top: 0.25rem;
-            right: 0.25rem;
-            font-size: 0.75rem; /* text-xs */
-            color: #6b7280; /* Tailwind gray-500 */
-            z-index: 5; /* Ensure it's below the today highlight */
-        }
-         /* Adjust date number color when today highlight is present */
-        .today-highlight + .date-number {
-             color: #1f2937 !important; /* Tailwind gray-800 - Ensure it's visible within highlight */
-        }
-        /* Style for the total remaining balance display */
-        #total-remaining-balance-display {
-            font-size: 1.125rem; /* text-lg */
-            font-weight: 600; /* semibold */
-            color: #166534; /* Tailwind green-700 */
-            text-align: center;
-            margin-bottom: 1rem; /* Space below it */
-            padding: 0.5rem;
-            background-color: #f0fdf4; /* Tailwind green-50 */
-            border-radius: 0.375rem; /* rounded-md */
-            border: 1px solid #bbf7d0; /* Tailwind green-200 */
+            background: linear-gradient(to right, #fefce8, #fff7ed);
+            border-top: 1px dashed #fdba74;
         }
 
+        /* Filter button active/inactive states */
+        .filter-btn.active { opacity: 1; transform: scale(1); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .filter-btn.inactive { opacity: 0.5; filter: grayscale(100%); background-color: #f1f5f9; border-color: #cbd5e1; color: #94a3b8; }
+
+        /* Past payment styling */
+        .is-past { opacity: 0.6; filter: grayscale(0.8); }
+        .is-past:hover { opacity: 1; filter: grayscale(0); }
     </style>
 </head>
-<body class="bg-gray-100 p-4 md:p-8">
+<body class="bg-slate-50 text-slate-800 p-3 md:p-8 min-h-screen">
 
-    <div class="max-w-5xl mx-auto bg-white rounded-lg shadow p-6">
-        <h1 class="text-2xl font-semibold text-gray-800 mb-2 text-center">Payment Calendar</h1>
-        <div id="total-remaining-balance-display" class="mb-4"></div>
-
-        <div class="flex justify-between items-center mb-4">
-            <button id="prev-month" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150 ease-in-out">&lt; Prev</button>
-            <h2 id="month-year" class="text-xl font-semibold text-gray-700"></h2>
-            <button id="next-month" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150 ease-in-out">Next &gt;</button>
-        </div>
-
-        <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-600 mb-2">
-            <div>Sun</div>
-            <div>Mon</div>
-            <div>Tue</div>
-            <div>Wed</div>
-            <div>Thu</div>
-            <div>Fri</div>
-            <div>Sat</div>
-        </div>
-        <div id="calendar-grid" class="grid grid-cols-7 gap-1 border border-gray-200 rounded-b-lg">
+    <div class="max-w-7xl mx-auto space-y-4 md:space-y-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <!-- Total Remaining Card -->
+            <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-emerald-100 relative overflow-hidden">
+                <div class="absolute right-4 top-4 text-emerald-50">
+                    <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
+                </div>
+                <p class="text-sm font-medium text-slate-500 uppercase tracking-wide">Total Remaining</p>
+                <h2 id="dash-total-balance" class="text-3xl font-bold text-emerald-700 mt-1">...</h2>
+                <p class="text-xs text-emerald-600 mt-2 font-medium bg-emerald-50 inline-block px-2 py-1 rounded">
+                    Future payments from <span id="current-date-display">today</span>
+                </p>
             </div>
+
+            <!-- Month Total Card -->
+            <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-blue-100 relative overflow-hidden">
+                <div class="absolute right-4 top-4 text-blue-50">
+                    <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                </div>
+                <p class="text-sm font-medium text-slate-500 uppercase tracking-wide">Due in <span id="dash-month-name">...</span></p>
+                <h2 id="dash-month-total" class="text-3xl font-bold text-blue-700 mt-1">...</h2>
+                <p class="text-xs text-slate-400 mt-2">Based on active filters</p>
+            </div>
+
+            <!-- Next Payment Card -->
+            <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-purple-100 relative overflow-hidden">
+                <div class="absolute right-4 top-4 text-purple-50">
+                    <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+                </div>
+                <p class="text-sm font-medium text-slate-500 uppercase tracking-wide">Next Payment</p>
+                <h2 id="dash-next-amount" class="text-2xl font-bold text-purple-700 mt-1">...</h2>
+                <p id="dash-next-date" class="text-sm text-purple-600 font-medium mt-1">...</p>
+            </div>
+        </div>
+
+        <!-- Controls & Calendar -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 md:p-4">
+            <div class="flex flex-col lg:flex-row justify-between items-center gap-4 lg:gap-6">
+                
+                <div class="flex items-center gap-2 md:gap-3 w-full lg:w-auto justify-between lg:justify-start">
+                    <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                        <button id="prev-month" class="p-2 hover:bg-white text-slate-600 rounded-md shadow-sm transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </button>
+                        <button id="jump-today" class="px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-white rounded-md transition-all uppercase tracking-wide">
+                            Today
+                        </button>
+                        <button id="next-month" class="p-2 hover:bg-white text-slate-600 rounded-md shadow-sm transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+                    <h2 id="month-year" class="text-lg md:text-xl font-bold text-slate-800 w-40 md:w-48 text-center select-none"></h2>
+                </div>
+
+                <div class="flex flex-col items-center lg:items-end gap-2 w-full lg:w-auto">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter References</span>
+                        <span class="text-[10px] text-slate-300">(Click to toggle)</span>
+                    </div>
+                    <div class="flex flex-wrap justify-center lg:justify-end gap-2" id="filter-container">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+            <div class="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+                <div class="py-3 text-center text-[10px] md:text-xs font-bold text-slate-500 uppercase">Sun</div>
+                <div class="py-3 text-center text-[10px] md:text-xs font-bold text-slate-500 uppercase">Mon</div>
+                <div class="py-3 text-center text-[10px] md:text-xs font-bold text-slate-500 uppercase">Tue</div>
+                <div class="py-3 text-center text-[10px] md:text-xs font-bold text-slate-500 uppercase">Wed</div>
+                <div class="py-3 text-center text-[10px] md:text-xs font-bold text-slate-500 uppercase">Thu</div>
+                <div class="py-3 text-center text-[10px] md:text-xs font-bold text-slate-500 uppercase">Fri</div>
+                <div class="py-3 text-center text-[10px] md:text-xs font-bold text-slate-500 uppercase">Sat</div>
+            </div>
+            
+            <div class="overflow-x-auto custom-scroll">
+                <div id="calendar-grid" class="grid grid-cols-7 min-w-[800px] md:min-w-0 bg-slate-200 gap-px border-b border-slate-200">
+                </div>
+            </div>
+        </div>
+        
     </div>
 
     <script>
-        // --- Payment Data (Unchanged) ---
-        const payments = [
-          // Ref 22239 ($10001.00 @ 40.60%)
-          { date: '2025-01-14', amount: 812.00, ref: '22239' },
-          { date: '2025-01-21', amount: 812.00, ref: '22239' },
-          { date: '2025-01-28', amount: 812.00, ref: '22239' },
-          { date: '2025-02-04', amount: 812.00, ref: '22239' },
-          { date: '2025-02-11', amount: 812.00, ref: '22239' },
-          { date: '2025-02-18', amount: 812.00, ref: '22239' },
-          { date: '2025-02-25', amount: 812.00, ref: '22239' },
-          { date: '2025-03-04', amount: 812.00, ref: '22239' },
-          { date: '2025-03-11', amount: 812.00, ref: '22239' },
-          { date: '2025-03-18', amount: 812.00, ref: '22239' },
-          { date: '2025-03-25', amount: 812.00, ref: '22239' },
-          { date: '2025-04-01', amount: 812.00, ref: '22239' },
-          { date: '2025-04-08', amount: 810.35, ref: '22239' },
+        // --- Configuration & Data ---
+        const colorPalettes = {
+            '22239': { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', hover: 'hover:bg-emerald-100' },
+            '22716': { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', hover: 'hover:bg-blue-100' },
+            '22475': { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', hover: 'hover:bg-indigo-100' },
+            '22996': { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', hover: 'hover:bg-amber-100' },
+            '23792': { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', hover: 'hover:bg-rose-100' },
+            '23989': { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700', hover: 'hover:bg-cyan-100' },
+            'default': { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-700', hover: 'hover:bg-gray-100' }
+        };
 
-          // Ref 22716 ($15000.00 @ 45.50%)
-          { date: '2025-03-03', amount: 647.54, ref: '22716' },
-          { date: '2025-03-10', amount: 647.54, ref: '22716' },
-          { date: '2025-03-17', amount: 647.54, ref: '22716' },
-          { date: '2025-03-24', amount: 647.54, ref: '22716' },
-          { date: '2025-03-31', amount: 647.54, ref: '22716' },
-          { date: '2025-04-07', amount: 647.54, ref: '22716' },
-          { date: '2025-04-14', amount: 647.54, ref: '22716' },
-          { date: '2025-04-22', amount: 647.54, ref: '22716' },
-          { date: '2025-04-28', amount: 647.54, ref: '22716' },
-          { date: '2025-05-05', amount: 647.54, ref: '22716' },
-          { date: '2025-05-12', amount: 647.54, ref: '22716' },
-          { date: '2025-05-20', amount: 647.54, ref: '22716' },
-          { date: '2025-05-26', amount: 647.54, ref: '22716' },
-          { date: '2025-06-02', amount: 647.54, ref: '22716' },
-          { date: '2025-06-09', amount: 647.54, ref: '22716' },
-          { date: '2025-06-16', amount: 647.54, ref: '22716' },
-          { date: '2025-06-23', amount: 647.54, ref: '22716' },
-          { date: '2025-06-30', amount: 647.54, ref: '22716' },
-          { date: '2025-07-07', amount: 647.54, ref: '22716' },
-          { date: '2025-07-14', amount: 647.54, ref: '22716' },
-          { date: '2025-07-21', amount: 647.54, ref: '22716' },
-          { date: '2025-07-28', amount: 647.54, ref: '22716' },
-          { date: '2025-08-05', amount: 647.54, ref: '22716' },
-          { date: '2025-08-11', amount: 647.54, ref: '22716' },
-          { date: '2025-08-18', amount: 647.54, ref: '22716' },
-          { date: '2025-08-25', amount: 644.28, ref: '22716' },
-
-          // Ref 22475 ($10001.00 @ 45.56%)
-          { date: '2025-02-05', amount: 817.31, ref: '22475' },
-          { date: '2025-02-12', amount: 817.31, ref: '22475' },
-          { date: '2025-02-19', amount: 817.31, ref: '22475' },
-          { date: '2025-02-26', amount: 817.31, ref: '22475' },
-          { date: '2025-03-05', amount: 817.31, ref: '22475' },
-          { date: '2025-03-12', amount: 817.31, ref: '22475' },
-          { date: '2025-03-19', amount: 817.31, ref: '22475' },
-          { date: '2025-03-26', amount: 817.31, ref: '22475' },
-          { date: '2025-04-02', amount: 817.31, ref: '22475' },
-          { date: '2025-04-09', amount: 817.31, ref: '22475' },
-          { date: '2025-04-16', amount: 817.31, ref: '22475' },
-          { date: '2025-04-23', amount: 817.31, ref: '22475' },
-          { date: '2025-04-30', amount: 815.58, ref: '22475' },
-
-          // Ref 22996 ($20000.00 @ 40.57%)
-          { date: '2025-04-02', amount: 596.77, ref: '22996' },
-          { date: '2025-04-09', amount: 596.77, ref: '22996' },
-          { date: '2025-04-16', amount: 596.77, ref: '22996' },
-          { date: '2025-04-23', amount: 596.77, ref: '22996' },
-          { date: '2025-04-30', amount: 596.77, ref: '22996' },
-          { date: '2025-05-07', amount: 596.77, ref: '22996' },
-          { date: '2025-05-14', amount: 596.77, ref: '22996' },
-          { date: '2025-05-21', amount: 596.77, ref: '22996' },
-          { date: '2025-05-28', amount: 596.77, ref: '22996' },
-          { date: '2025-06-04', amount: 596.77, ref: '22996' },
-          { date: '2025-06-11', amount: 596.77, ref: '22996' },
-          { date: '2025-06-18', amount: 596.77, ref: '22996' },
-          { date: '2025-06-25', amount: 596.77, ref: '22996' },
-          { date: '2025-07-02', amount: 596.77, ref: '22996' },
-          { date: '2025-07-09', amount: 596.77, ref: '22996' },
-          { date: '2025-07-16', amount: 596.77, ref: '22996' },
-          { date: '2025-07-23', amount: 596.77, ref: '22996' },
-          { date: '2025-07-30', amount: 596.77, ref: '22996' },
-          { date: '2025-08-06', amount: 596.77, ref: '22996' },
-          { date: '2025-08-13', amount: 596.77, ref: '22996' },
-          { date: '2025-08-20', amount: 596.77, ref: '22996' },
-          { date: '2025-08-27', amount: 596.77, ref: '22996' },
-          { date: '2025-09-03', amount: 596.77, ref: '22996' },
-          { date: '2025-09-10', amount: 596.77, ref: '22996' },
-          { date: '2025-09-17', amount: 596.77, ref: '22996' },
-          { date: '2025-09-24', amount: 596.77, ref: '22996' },
-          { date: '2025-10-01', amount: 596.77, ref: '22996' },
-          { date: '2025-10-08', amount: 596.77, ref: '22996' },
-          { date: '2025-10-15', amount: 596.77, ref: '22996' },
-          { date: '2025-10-22', amount: 596.77, ref: '22996' },
-          { date: '2025-10-29', amount: 596.77, ref: '22996' },
-          { date: '2025-11-05', amount: 596.77, ref: '22996' },
-          { date: '2025-11-12', amount: 596.77, ref: '22996' },
-          { date: '2025-11-19', amount: 596.77, ref: '22996' },
-          { date: '2025-11-26', amount: 596.77, ref: '22996' },
-          { date: '2025-12-03', amount: 596.77, ref: '22996' },
-          { date: '2025-12-10', amount: 596.77, ref: '22996' },
-          { date: '2025-12-17', amount: 596.77, ref: '22996' },
-          { date: '2025-12-24', amount: 585.93, ref: '22996' },
+        const rawPayments = [
+            { date: '2025-01-14', amount: 812.00, ref: '22239' }, { date: '2025-01-21', amount: 812.00, ref: '22239' },
+            { date: '2025-01-28', amount: 812.00, ref: '22239' }, { date: '2025-02-04', amount: 812.00, ref: '22239' },
+            { date: '2025-02-11', amount: 812.00, ref: '22239' }, { date: '2025-02-18', amount: 812.00, ref: '22239' },
+            { date: '2025-02-25', amount: 812.00, ref: '22239' }, { date: '2025-03-04', amount: 812.00, ref: '22239' },
+            { date: '2025-03-11', amount: 812.00, ref: '22239' }, { date: '2025-03-18', amount: 812.00, ref: '22239' },
+            { date: '2025-03-25', amount: 812.00, ref: '22239' }, { date: '2025-04-01', amount: 812.00, ref: '22239' },
+            { date: '2025-04-08', amount: 810.35, ref: '22239' }, { date: '2025-03-03', amount: 647.54, ref: '22716' },
+            { date: '2025-03-10', amount: 647.54, ref: '22716' }, { date: '2025-03-17', amount: 647.54, ref: '22716' },
+            { date: '2025-03-24', amount: 647.54, ref: '22716' }, { date: '2025-03-31', amount: 647.54, ref: '22716' },
+            { date: '2025-04-07', amount: 647.54, ref: '22716' }, { date: '2025-04-14', amount: 647.54, ref: '22716' },
+            { date: '2025-04-22', amount: 647.54, ref: '22716' }, { date: '2025-04-28', amount: 647.54, ref: '22716' },
+            { date: '2025-05-05', amount: 647.54, ref: '22716' }, { date: '2025-05-12', amount: 647.54, ref: '22716' },
+            { date: '2025-05-20', amount: 647.54, ref: '22716' }, { date: '2025-05-26', amount: 647.54, ref: '22716' },
+            { date: '2025-06-02', amount: 647.54, ref: '22716' }, { date: '2025-06-09', amount: 647.54, ref: '22716' },
+            { date: '2025-06-16', amount: 647.54, ref: '22716' }, { date: '2025-06-23', amount: 647.54, ref: '22716' },
+            { date: '2025-06-30', amount: 647.54, ref: '22716' }, { date: '2025-07-07', amount: 647.54, ref: '22716' },
+            { date: '2025-07-14', amount: 647.54, ref: '22716' }, { date: '2025-07-21', amount: 647.54, ref: '22716' },
+            { date: '2025-07-28', amount: 647.54, ref: '22716' }, { date: '2025-08-05', amount: 647.54, ref: '22716' },
+            { date: '2025-08-11', amount: 647.54, ref: '22716' }, { date: '2025-08-18', amount: 647.54, ref: '22716' },
+            { date: '2025-08-25', amount: 644.28, ref: '22716' }, { date: '2025-02-05', amount: 817.31, ref: '22475' },
+            { date: '2025-02-12', amount: 817.31, ref: '22475' }, { date: '2025-02-19', amount: 817.31, ref: '22475' },
+            { date: '2025-02-26', amount: 817.31, ref: '22475' }, { date: '2025-03-05', amount: 817.31, ref: '22475' },
+            { date: '2025-03-12', amount: 817.31, ref: '22475' }, { date: '2025-03-19', amount: 817.31, ref: '22475' },
+            { date: '2025-03-26', amount: 817.31, ref: '22475' }, { date: '2025-04-02', amount: 817.31, ref: '22475' },
+            { date: '2025-04-09', amount: 817.31, ref: '22475' }, { date: '2025-04-16', amount: 817.31, ref: '22475' },
+            { date: '2025-04-23', amount: 817.31, ref: '22475' }, { date: '2025-04-30', amount: 815.58, ref: '22475' },
+            { date: '2025-04-02', amount: 596.77, ref: '22996' }, { date: '2025-04-09', amount: 596.77, ref: '22996' },
+            { date: '2025-04-16', amount: 596.77, ref: '22996' }, { date: '2025-04-23', amount: 596.77, ref: '22996' },
+            { date: '2025-04-30', amount: 596.77, ref: '22996' }, { date: '2025-05-07', amount: 596.77, ref: '22996' },
+            { date: '2025-05-14', amount: 596.77, ref: '22996' }, { date: '2025-05-21', amount: 596.77, ref: '22996' },
+            { date: '2025-05-28', amount: 596.77, ref: '22996' }, { date: '2025-06-04', amount: 596.77, ref: '22996' },
+            { date: '2025-06-11', amount: 596.77, ref: '22996' }, { date: '2025-06-18', amount: 596.77, ref: '22996' },
+            { date: '2025-06-25', amount: 596.77, ref: '22996' }, { date: '2025-07-02', amount: 596.77, ref: '22996' },
+            { date: '2025-07-09', amount: 596.77, ref: '22996' }, { date: '2025-07-16', amount: 596.77, ref: '22996' },
+            { date: '2025-07-23', amount: 596.77, ref: '22996' }, { date: '2025-07-30', amount: 596.77, ref: '22996' },
+            { date: '2025-08-06', amount: 596.77, ref: '22996' }, { date: '2025-08-13', amount: 596.77, ref: '22996' },
+            { date: '2025-08-20', amount: 596.77, ref: '22996' }, { date: '2025-08-27', amount: 596.77, ref: '22996' },
+            { date: '2025-09-03', amount: 596.77, ref: '22996' }, { date: '2025-09-10', amount: 596.77, ref: '22996' },
+            { date: '2025-09-17', amount: 596.77, ref: '22996' }, { date: '2025-09-24', amount: 596.77, ref: '22996' },
+            { date: '2025-10-01', amount: 596.77, ref: '22996' }, { date: '2025-10-08', amount: 596.77, ref: '22996' },
+            { date: '2025-10-15', amount: 596.77, ref: '22996' }, { date: '2025-10-22', amount: 596.77, ref: '22996' },
+            { date: '2025-10-29', amount: 596.77, ref: '22996' }, { date: '2025-11-05', amount: 596.77, ref: '22996' },
+            { date: '2025-11-12', amount: 596.77, ref: '22996' }, { date: '2025-11-19', amount: 596.77, ref: '22996' },
+            { date: '2025-11-26', amount: 596.77, ref: '22996' }, { date: '2025-12-03', amount: 596.77, ref: '22996' },
+            { date: '2025-12-10', amount: 596.77, ref: '22996' }, { date: '2025-12-17', amount: 596.77, ref: '22996' },
+            { date: '2025-12-24', amount: 585.93, ref: '22996' }, { date: '2025-07-11', amount: 303.80, ref: '23792' },
+            { date: '2025-07-18', amount: 303.80, ref: '23792' }, { date: '2025-07-25', amount: 303.80, ref: '23792' },
+            { date: '2025-08-01', amount: 303.80, ref: '23792' }, { date: '2025-08-08', amount: 303.80, ref: '23792' },
+            { date: '2025-08-15', amount: 303.80, ref: '23792' }, { date: '2025-08-22', amount: 303.80, ref: '23792' },
+            { date: '2025-08-29', amount: 303.80, ref: '23792' }, { date: '2025-09-05', amount: 303.80, ref: '23792' },
+            { date: '2025-09-12', amount: 303.80, ref: '23792' }, { date: '2025-09-19', amount: 303.80, ref: '23792' },
+            { date: '2025-09-26', amount: 303.80, ref: '23792' }, { date: '2025-10-03', amount: 303.80, ref: '23792' },
+            { date: '2025-10-10', amount: 303.80, ref: '23792' }, { date: '2025-10-17', amount: 303.80, ref: '23792' },
+            { date: '2025-10-24', amount: 303.80, ref: '23792' }, { date: '2025-10-31', amount: 303.80, ref: '23792' },
+            { date: '2025-11-07', amount: 303.80, ref: '23792' }, { date: '2025-11-14', amount: 303.80, ref: '23792' },
+            { date: '2025-11-21', amount: 303.80, ref: '23792' }, { date: '2025-11-28', amount: 303.80, ref: '23792' },
+            { date: '2025-12-05', amount: 303.80, ref: '23792' }, { date: '2025-12-12', amount: 303.80, ref: '23792' },
+            { date: '2025-12-19', amount: 303.80, ref: '23792' }, { date: '2025-12-29', amount: 303.80, ref: '23792' },
+            { date: '2026-01-05', amount: 303.80, ref: '23792' }, { date: '2026-01-09', amount: 303.80, ref: '23792' },
+            { date: '2026-01-16', amount: 303.80, ref: '23792' }, { date: '2026-01-23', amount: 303.80, ref: '23792' },
+            { date: '2026-01-30', amount: 303.80, ref: '23792' }, { date: '2026-02-06', amount: 303.80, ref: '23792' },
+            { date: '2026-02-13', amount: 303.80, ref: '23792' }, { date: '2026-02-20', amount: 303.80, ref: '23792' },
+            { date: '2026-02-27', amount: 303.80, ref: '23792' }, { date: '2026-03-06', amount: 303.80, ref: '23792' },
+            { date: '2026-03-13', amount: 303.80, ref: '23792' }, { date: '2026-03-20', amount: 303.80, ref: '23792' },
+            { date: '2026-03-27', amount: 303.80, ref: '23792' }, { date: '2026-04-07', amount: 301.31, ref: '23792' },
+            { date: '2025-08-05', amount: 1158.78, ref: '23989' }, { date: '2025-08-11', amount: 1158.78, ref: '23989' },
+            { date: '2025-08-18', amount: 1158.78, ref: '23989' }, { date: '2025-08-25', amount: 1158.78, ref: '23989' },
+            { date: '2025-09-02', amount: 1158.78, ref: '23989' }, { date: '2025-09-08', amount: 1158.78, ref: '23989' },
+            { date: '2025-09-15', amount: 1158.78, ref: '23989' }, { date: '2025-09-22', amount: 1158.78, ref: '23989' },
+            { date: '2025-09-29', amount: 1158.78, ref: '23989' }, { date: '2025-10-06', amount: 1.59, ref: '23989' },
         ];
 
-        // --- Calendar Logic ---
-        const calendarGrid = document.getElementById('calendar-grid');
-        const monthYearDisplay = document.getElementById('month-year');
-        const prevMonthButton = document.getElementById('prev-month');
-        const nextMonthButton = document.getElementById('next-month');
-        const totalRemainingBalanceDisplay = document.getElementById('total-remaining-balance-display');
-
-        // Get the actual current date
+        // --- State Management ---
         const todayActual = new Date();
-        // Normalize to the start of the day for accurate date comparisons
         todayActual.setHours(0, 0, 0, 0);
+        
+        const state = {
+            currentYear: todayActual.getFullYear(),
+            currentMonth: todayActual.getMonth(),
+            // Initialize with all filters active
+            activeFilters: new Set(Object.keys(colorPalettes).filter(k => k !== 'default'))
+        };
 
-        // These variables will be used for highlighting and initial display
-        const currentYearActual = todayActual.getFullYear();
-        const currentMonthActual = todayActual.getMonth(); // 0-indexed
-        const currentDayActual = todayActual.getDate();
+        // --- DOM Elements ---
+        const els = {
+            grid: document.getElementById('calendar-grid'),
+            monthTitle: document.getElementById('month-year'),
+            dashTotal: document.getElementById('dash-total-balance'),
+            dashDate: document.getElementById('current-date-display'),
+            dashMonthTotal: document.getElementById('dash-month-total'),
+            dashMonthName: document.getElementById('dash-month-name'),
+            dashNextAmt: document.getElementById('dash-next-amount'),
+            dashNextDate: document.getElementById('dash-next-date'),
+            filterContainer: document.getElementById('filter-container')
+        };
 
-        // Set the initially displayed month and year to the current month and year
-        let displayedYear = currentYearActual;
-        let displayedMonth = currentMonthActual;
+        // --- Utilities ---
+        const formatCurrency = (amt) => amt.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+        const getStyle = (ref) => colorPalettes[ref] || colorPalettes['default'];
 
-        // Total initial loan amount from all schedules
-        const initialTotalLoanAmount = 55003.00;
+        // --- Core Logic ---
 
-        /**
-         * Calculates and displays the total remaining balance based on todayActual.
-         */
-        function updateTotalRemainingBalance() {
-            let totalPaidToDate = 0;
-            payments.forEach(payment => {
-                const [year, month, day] = payment.date.split('-').map(Number);
-                const paymentDate = new Date(year, month - 1, day); // month is 0-indexed
-                paymentDate.setHours(0,0,0,0); // Normalize
+        function initFilters() {
+            els.filterContainer.innerHTML = '';
+            const uniqueRefs = [...new Set(rawPayments.map(p => p.ref))].sort();
+            
+            uniqueRefs.forEach(ref => {
+                const btn = document.createElement('button');
+                const style = getStyle(ref);
+                const isActive = state.activeFilters.has(ref);
+                
+                // Styling based on state
+                btn.className = `filter-btn text-[10px] md:text-xs px-3 py-1.5 rounded-full border font-medium transition-all duration-200 flex items-center gap-1.5 ${isActive ? 'active' : 'inactive'}`;
+                
+                if (isActive) {
+                    btn.classList.add(style.bg.replace('bg-', 'bg-'), style.border, style.text);
+                }
 
-                if (paymentDate <= todayActual) { // Compare with actual current date
-                    totalPaidToDate += payment.amount;
+                btn.innerHTML = `<span class="w-2 h-2 rounded-full bg-current"></span> Ref ${ref}`;
+                
+                btn.onclick = () => {
+                    if (state.activeFilters.has(ref)) {
+                        state.activeFilters.delete(ref);
+                    } else {
+                        state.activeFilters.add(ref);
+                    }
+                    initFilters(); // Re-render buttons
+                    updateDashboard();
+                    renderCalendar();
+                };
+                els.filterContainer.appendChild(btn);
+            });
+        }
+
+        function getFilteredPayments() {
+            return rawPayments.filter(p => state.activeFilters.has(p.ref));
+        }
+
+        function updateDashboard() {
+            const activePayments = getFilteredPayments();
+            
+            // 1. Total Remaining (Future) & Next Payment
+            let totalRemaining = 0;
+            let nextPayment = null;
+            let minDiff = Infinity;
+
+            activePayments.forEach(p => {
+                const [y, m, d] = p.date.split('-').map(Number);
+                const pDate = new Date(y, m - 1, d);
+                pDate.setHours(0,0,0,0);
+
+                if (pDate >= todayActual) {
+                    totalRemaining += p.amount;
+                    
+                    const diff = pDate - todayActual;
+                    if (diff >= 0 && diff < minDiff) {
+                        minDiff = diff;
+                        nextPayment = { ...p, jsDate: pDate };
+                    }
                 }
             });
 
-            const remainingBalance = initialTotalLoanAmount - totalPaidToDate;
-            // Display the "as of" date using todayActual
-            totalRemainingBalanceDisplay.textContent = `Total Remaining Balance (as of ${todayActual.toLocaleDateString('en-CA')}): ${formatCurrency(remainingBalance)}`;
-        }
-
-
-        /**
-         * Formats a number as currency (USD).
-         * @param {number} amount - The amount to format.
-         * @returns {string} Formatted currency string.
-         */
-        function formatCurrency(amount) {
-            return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-        }
-
-        /**
-         * Generates and displays the calendar for a given month and year.
-         * @param {number} year - The full year (e.g., 2025).
-         * @param {number} month - The month (0-indexed, 0 = January).
-         */
-        function generateCalendar(year, month) {
-            calendarGrid.innerHTML = ''; // Clear previous grid
-
-            const monthName = new Date(year, month).toLocaleString('en-US', { month: 'long' });
-            monthYearDisplay.textContent = `${monthName} ${year}`;
-
-            const firstDayOfMonth = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            let weeklyTotal = 0;
-
-            // Create blank cells for days before the 1st of the month
-            for (let i = 0; i < firstDayOfMonth; i++) {
-                const blankCell = document.createElement('div');
-                blankCell.className = 'bg-gray-50 border border-gray-200';
-                calendarGrid.appendChild(blankCell);
-            }
-
-            // Create cells for each day of the month
-            for (let day = 1; day <= daysInMonth; day++) {
-                const cell = document.createElement('div');
-                cell.className = 'calendar-cell bg-white border border-gray-200 overflow-y-auto';
-
-                const dateNumberSpan = document.createElement('span');
-                dateNumberSpan.textContent = day;
-                dateNumberSpan.className = 'date-number';
-
-                // Highlight "today" based on actual current date
-                const cellDate = new Date(year, month, day);
-                cellDate.setHours(0,0,0,0); // Normalize for comparison
-
-                // Check if the cell's date matches todayActual's date components
-                if (year === currentYearActual && month === currentMonthActual && day === currentDayActual) {
-                    const todayDiv = document.createElement('div');
-                    todayDiv.className = 'today-highlight';
-                    todayDiv.textContent = day; // Show day number in highlight
-                    cell.appendChild(todayDiv);
+            // 2. Month Total (Displayed Month)
+            let monthTotal = 0;
+            activePayments.forEach(p => {
+                const [y, m, d] = p.date.split('-').map(Number);
+                if (y === state.currentYear && (m-1) === state.currentMonth) {
+                    monthTotal += p.amount;
                 }
-                cell.appendChild(dateNumberSpan); // Always add the date number
+            });
 
-                const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const paymentsForDay = payments.filter(p => p.date === cellDateStr);
-                const dailyTotal = paymentsForDay.reduce((sum, p) => sum + p.amount, 0);
-                weeklyTotal += dailyTotal;
+            // Update DOM
+            els.dashTotal.textContent = formatCurrency(totalRemaining);
+            if(els.dashDate) els.dashDate.textContent = todayActual.toLocaleDateString('en-CA');
+            els.dashMonthTotal.textContent = formatCurrency(monthTotal);
+            els.dashMonthName.textContent = new Date(state.currentYear, state.currentMonth).toLocaleString('default', { month: 'short' });
 
-                paymentsForDay.forEach(payment => {
-                    const paymentDiv = document.createElement('div');
-                    paymentDiv.className = 'payment-entry';
-                    const formattedAmount = formatCurrency(payment.amount);
-                    paymentDiv.textContent = `${formattedAmount} (Ref: ${payment.ref})`;
-                    paymentDiv.title = `${formattedAmount} (Ref: ${payment.ref})`;
-                    cell.appendChild(paymentDiv);
+            if (nextPayment) {
+                els.dashNextAmt.textContent = formatCurrency(nextPayment.amount);
+                els.dashNextDate.textContent = `Due ${nextPayment.jsDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (Ref ${nextPayment.ref})`;
+            } else {
+                els.dashNextAmt.textContent = "All Paid";
+                els.dashNextDate.textContent = "-";
+            }
+        }
+
+        function renderCalendar() {
+            const year = state.currentYear;
+            const month = state.currentMonth;
+            
+            els.monthTitle.textContent = new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            els.grid.innerHTML = '';
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0-6
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDate = new Date(year, month, 0); // Last day of prev month
+
+            const activePayments = getFilteredPayments();
+            
+            // We want a full rectangular grid (6 rows usually cover all months)
+            const totalSlots = 42; 
+            
+            let rowWeeklyTotal = 0;
+            
+            // Determine max visible based on screen width
+            const isMobile = window.innerWidth < 768;
+            const maxVisible = isMobile ? 2 : 3;
+
+            for (let i = 0; i < totalSlots; i++) {
+                // Determine date for this cell
+                let cellYear = year;
+                let cellMonth = month;
+                let cellDay;
+                let isCurrentMonth = true;
+
+                if (i < firstDayOfMonth) {
+                    // Previous Month padding
+                    cellDay = prevMonthDate.getDate() - (firstDayOfMonth - i - 1);
+                    cellMonth = month - 1;
+                    if (cellMonth < 0) { cellMonth = 11; cellYear--; }
+                    isCurrentMonth = false;
+                } else if (i >= firstDayOfMonth + daysInMonth) {
+                    // Next Month padding
+                    cellDay = i - (firstDayOfMonth + daysInMonth) + 1;
+                    cellMonth = month + 1;
+                    if (cellMonth > 11) { cellMonth = 0; cellYear++; }
+                    isCurrentMonth = false;
+                } else {
+                    // Current Month
+                    cellDay = i - firstDayOfMonth + 1;
+                }
+
+                const dateObj = new Date(cellYear, cellMonth, cellDay);
+                dateObj.setHours(0,0,0,0);
+                const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(cellDay).padStart(2, '0')}`;
+                
+                const isToday = dateObj.getTime() === todayActual.getTime();
+                const isPast = dateObj < todayActual;
+
+                // --- Build Cell ---
+                const cell = document.createElement('div');
+                cell.className = `calendar-cell relative p-1 md:p-2 flex flex-col gap-1 border-r border-b border-slate-200 ${isCurrentMonth ? 'bg-white' : 'bg-slate-50'}`;
+
+                // Date Number
+                const headerDiv = document.createElement('div');
+                headerDiv.className = "flex justify-between items-start mb-0.5 md:mb-1";
+                const dateNum = document.createElement('span');
+                dateNum.textContent = cellDay;
+                
+                if (isToday) {
+                    dateNum.className = "text-xs md:text-sm font-bold text-white bg-blue-600 w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full shadow-md";
+                } else if (!isCurrentMonth) {
+                    dateNum.className = "text-xs md:text-sm font-medium text-slate-300";
+                } else {
+                    dateNum.className = "text-xs md:text-sm font-medium text-slate-700";
+                }
+                headerDiv.appendChild(dateNum);
+                cell.appendChild(headerDiv);
+
+                // Payments Logic
+                const dayPayments = activePayments.filter(p => p.date === dateStr);
+                const daySum = dayPayments.reduce((acc, curr) => acc + curr.amount, 0);
+                rowWeeklyTotal += daySum;
+
+                // Render Payments
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = "cell-content flex-1 flex flex-col gap-0.5 md:gap-1 relative"; // relative for tooltip positioning
+
+                const displayList = dayPayments.slice(0, maxVisible);
+                const hiddenCount = dayPayments.length - maxVisible;
+
+                displayList.forEach(p => {
+                    const style = getStyle(p.ref);
+                    const pill = document.createElement('div');
+                    // Mobile: hide ref text, Desktop: show all
+                    pill.className = `text-[9px] md:text-[10px] sm:text-xs px-1 md:px-1.5 py-0.5 rounded border truncate cursor-default transition-transform hover:scale-105 ${style.bg} ${style.border} ${style.text} ${style.hover} ${isPast ? 'is-past' : ''}`;
+                    pill.innerHTML = `<span class="font-bold">${formatCurrency(p.amount)}</span>`;
+                    contentWrapper.appendChild(pill);
                 });
 
-                const dayOfWeek = new Date(year, month, day).getDay();
-                if (dayOfWeek === 6 || day === daysInMonth) { // If Saturday or last day of month
-                    if (weeklyTotal > 0) {
-                        const weeklyTotalDiv = document.createElement('div');
-                        weeklyTotalDiv.className = 'weekly-total';
-                        weeklyTotalDiv.textContent = `Week: ${formatCurrency(weeklyTotal)}`;
-                        weeklyTotalDiv.title = `Total for week ending ${cellDateStr}: ${formatCurrency(weeklyTotal)}`;
-                        cell.appendChild(weeklyTotalDiv);
-                    }
-                    weeklyTotal = 0; // Reset for the next week
+                if (hiddenCount > 0) {
+                    const moreBadge = document.createElement('div');
+                    moreBadge.className = "text-[9px] md:text-[10px] text-slate-400 font-medium pl-1";
+                    moreBadge.textContent = `+${hiddenCount} more`;
+                    contentWrapper.appendChild(moreBadge);
                 }
-                calendarGrid.appendChild(cell);
-            }
 
-            // Add blank cells to fill the remaining grid if needed
-            const totalCellsFilled = firstDayOfMonth + daysInMonth;
-            const remainingCells = (7 - (totalCellsFilled % 7)) % 7;
-            for (let i = 0; i < remainingCells; i++) {
-                const blankCell = document.createElement('div');
-                blankCell.className = 'bg-gray-50 border border-gray-200';
-                calendarGrid.appendChild(blankCell);
+                // Hover Tooltip (Only if payments exist)
+                if (dayPayments.length > 0) {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = "overflow-tooltip hidden absolute z-20 left-0 top-full mt-[-10px] w-40 md:w-48 bg-white shadow-xl border border-slate-200 rounded-lg p-2 md:p-3 max-h-56 overflow-y-auto";
+                    
+                    const ttHeader = document.createElement('div');
+                    ttHeader.className = "text-xs font-bold text-slate-700 mb-2 border-b pb-1";
+                    ttHeader.textContent = `${new Date(dateStr).toLocaleDateString('en-US', {month:'short', day:'numeric'})} Total: ${formatCurrency(daySum)}`;
+                    tooltip.appendChild(ttHeader);
+
+                    dayPayments.forEach(p => {
+                        const style = getStyle(p.ref);
+                        const row = document.createElement('div');
+                        row.className = `text-xs mb-1.5 flex justify-between items-center ${style.text}`;
+                        row.innerHTML = `<span class="opacity-75">Ref ${p.ref}</span> <span class="font-bold">${formatCurrency(p.amount)}</span>`;
+                        tooltip.appendChild(row);
+                    });
+                    contentWrapper.appendChild(tooltip);
+                }
+
+                cell.appendChild(contentWrapper);
+
+                // Weekly Total (End of row or end of grid)
+                if ((i + 1) % 7 === 0) {
+                    if (rowWeeklyTotal > 0) {
+                        const wTotal = document.createElement('div');
+                        wTotal.className = "weekly-total mt-auto text-right text-[9px] md:text-[10px] font-bold text-orange-700 py-1 px-1 rounded-sm";
+                        wTotal.textContent = `Wk: ${formatCurrency(rowWeeklyTotal)}`;
+                        cell.appendChild(wTotal);
+                    }
+                    rowWeeklyTotal = 0;
+                }
+
+                els.grid.appendChild(cell);
             }
         }
 
         // --- Event Listeners ---
-        prevMonthButton.addEventListener('click', () => {
-            displayedMonth--;
-            if (displayedMonth < 0) {
-                displayedMonth = 11; // December
-                displayedYear--;
-            }
-            generateCalendar(displayedYear, displayedMonth);
+        document.getElementById('prev-month').addEventListener('click', () => {
+            state.currentMonth--;
+            if (state.currentMonth < 0) { state.currentMonth = 11; state.currentYear--; }
+            updateDashboard();
+            renderCalendar();
         });
 
-        nextMonthButton.addEventListener('click', () => {
-            displayedMonth++;
-            if (displayedMonth > 11) {
-                displayedMonth = 0; // January
-                displayedYear++;
-            }
-            generateCalendar(displayedYear, displayedMonth);
+        document.getElementById('next-month').addEventListener('click', () => {
+            state.currentMonth++;
+            if (state.currentMonth > 11) { state.currentMonth = 0; state.currentYear++; }
+            updateDashboard();
+            renderCalendar();
         });
 
-        // --- Initial Load ---
-        updateTotalRemainingBalance(); // Calculate and display remaining balance using actual current date
-        // Generate the calendar for the actual current month on page load
-        generateCalendar(displayedYear, displayedMonth);
+        document.getElementById('jump-today').addEventListener('click', () => {
+            state.currentYear = todayActual.getFullYear();
+            state.currentMonth = todayActual.getMonth();
+            updateDashboard();
+            renderCalendar();
+        });
+        
+        // Handle window resize for responsive rendering
+        window.addEventListener('resize', () => {
+            renderCalendar();
+        });
+
+        // --- Init ---
+        initFilters();
+        updateDashboard();
+        renderCalendar();
 
     </script>
-
 </body>
 </html>
