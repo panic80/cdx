@@ -3,488 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Payment Calendar</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <title>Payment Tracker — 23792</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #F8FAFC; 
-            color: #1E293B;
-            -webkit-font-smoothing: antialiased;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0C0F14; --card: #1A1F2B; --elevated: #222838;
+            --border: rgba(255,255,255,0.06); --border-h: rgba(255,255,255,0.12);
+            --text: #E8ECF4; --text2: #8B95A8; --muted: #4D5668;
+            --rose: #FB7185; --rose-bg: rgba(251,113,133,0.1); --rose-border: rgba(251,113,133,0.2);
+            --emerald: #34D399; --blue: #60A5FA;
         }
-        
-        /* Entrance Animations */
-        @keyframes slideUpFade {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-in { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+        body::before { content: ''; position: fixed; top: -40%; left: -20%; width: 80%; height: 80%; background: radial-gradient(ellipse, rgba(251,113,133,0.04) 0%, transparent 60%); pointer-events: none; }
+        .app { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 16px; }
+        @media (min-width: 768px) { .app { padding: 32px; } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(96,165,250,0.5); } 70% { box-shadow: 0 0 0 8px rgba(96,165,250,0); } 100% { box-shadow: 0 0 0 0 rgba(96,165,250,0); } }
+        .fade-up { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; opacity: 0; }
+        .d1 { animation-delay: .05s; } .d2 { animation-delay: .1s; } .d3 { animation-delay: .15s; } .d4 { animation-delay: .2s; }
 
-        /* Today Pulse Effect */
-        @keyframes pulse-soft {
-            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-        }
-        .today-marker {
-            position: relative;
-            animation: pulse-soft 2s infinite;
-        }
+        .header { display: flex; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-mark { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--rose), #E11D48); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: #fff; }
+        .logo-text { font-weight: 700; font-size: 18px; letter-spacing: -0.5px; }
+        .logo-text span { color: var(--muted); font-weight: 400; font-size: 14px; }
 
-        /* Custom Scrollbar */
-        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+        .stats { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
+        @media (min-width: 768px) { .stats { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+        .stat { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; position: relative; overflow: hidden; transition: border-color .3s, transform .3s; }
+        .stat:hover { border-color: var(--border-h); transform: translateY(-2px); }
+        .stat::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--rose), transparent); }
+        .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .stat-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--rose-bg); color: var(--rose); }
+        .stat-icon svg { width: 16px; height: 16px; }
+        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; letter-spacing: -1px; color: var(--rose); }
+        .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; font-weight: 500; }
+        .stat-sub strong { color: var(--text2); }
 
-        /* Calendar Cell Styling */
-        .calendar-cell { 
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        @media (min-width: 768px) {
-            .calendar-cell { min-height: 120px; }
-            .calendar-cell:hover { 
-                background: #FFFFFF !important;
-                z-index: 10;
-                transform: translateY(-2px);
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-                border-radius: 12px;
-            }
-        }
-        @media (max-width: 767px) {
-            .calendar-cell { min-height: 75px; }
-        }
+        .progress-wrap { margin-bottom: 20px; }
+        .progress-bar-bg { height: 6px; border-radius: 3px; background: var(--elevated); overflow: hidden; margin-top: 8px; }
+        .progress-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--rose), #E11D48); transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
+        .progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-weight: 500; }
+        .progress-labels strong { color: var(--text2); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
 
-        .calendar-cell.selected-day { 
-            background-color: #F0F9FF !important; 
-            box-shadow: inset 0 0 0 2px #3B82F6 !important; 
-        }
+        .toolbar { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 12px; z-index: 40; backdrop-filter: blur(16px); }
+        .nav-buttons { display: flex; align-items: center; background: var(--elevated); border-radius: 10px; padding: 3px; }
+        .nav-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 8px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+        .nav-btn:hover { background: var(--card); color: var(--text); }
+        .nav-btn:active { transform: scale(0.92); }
+        .nav-btn svg { width: 18px; height: 18px; }
+        .today-btn { background: none; border: 1px solid var(--border); color: var(--blue); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; padding: 8px 16px; border-radius: 8px; transition: all .2s; }
+        .today-btn:hover { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.3); }
+        .month-title { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+        .month-title span { color: var(--muted); font-weight: 400; }
+        .nav-left { display: flex; align-items: center; gap: 12px; }
 
-        /* Glass Cards */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
+        .cal-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+        .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border); }
+        .cal-header-cell { padding: 14px 0; text-align: center; font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .cal-cell { min-height: 70px; padding: 6px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: background .2s; }
+        @media (min-width: 768px) { .cal-cell { min-height: 100px; padding: 8px 10px; } .cal-cell:hover { background: var(--elevated) !important; } }
+        .cal-cell.other { opacity: 0.25; }
+        .cal-cell.selected { background: rgba(251,113,133,0.06) !important; box-shadow: inset 0 0 0 1.5px var(--rose); border-radius: 4px; }
+        .cal-cell:nth-child(7n) { border-right: none; }
+        .day-num { font-size: 12px; font-weight: 600; color: var(--text2); }
+        .cal-cell.other .day-num { color: var(--muted); }
+        .day-today { background: var(--blue); color: #fff !important; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; animation: pulseRing 2.5s infinite; box-shadow: 0 0 12px rgba(96,165,250,0.3); }
+        @media (min-width: 768px) { .day-today { width: 30px; height: 30px; font-size: 13px; } }
+        .pay-pill { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 5px; background: var(--rose-bg); border: 1px solid var(--rose-border); color: var(--rose); }
+        @media (max-width: 767px) { .pay-pill { font-size: 9px; padding: 2px 6px; text-align: center; } }
 
-        /* Filter Toggle Styling */
-        .filter-btn { transition: all 0.2s ease; }
-        .filter-btn.active { transform: scale(1.05); }
-        .filter-btn.inactive { opacity: 0.5; filter: grayscale(1); background: #F1F5F9; border-color: #E2E8F0; color: #64748B; }
-
-        /* Optical Centering for circles */
-        .dot-align {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
+        .detail { background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-top: 16px; overflow: hidden; }
+        .detail.hidden { display: none; }
+        .detail-hdr { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+        .detail-title { font-size: 16px; font-weight: 700; }
+        .detail-sub { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; }
+        .detail-total-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; text-align: right; }
+        .detail-total-val { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; }
+        .detail-list { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .detail-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-radius: 12px; background: var(--elevated); border: 1px solid var(--border); transition: border-color .2s; }
+        .detail-item:hover { border-color: var(--border-h); }
+        .detail-item-left { display: flex; align-items: center; gap: 12px; }
+        .detail-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rose); box-shadow: 0 0 8px var(--rose-bg); }
+        .detail-ref { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: var(--rose); padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,0.04); }
+        .detail-amt { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; }
+        .empty-day { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; font-style: italic; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--elevated); border-radius: 10px; }
     </style>
 </head>
-<body class="p-3 md:p-8">
-
-    <div class="max-w-6xl mx-auto space-y-6">
-        
-        <!-- Header Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Balance Card -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/60 relative overflow-hidden group hover:shadow-md transition-shadow">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
-                <div class="relative z-10">
-                    <div class="flex items-center gap-2 mb-3">
-                        <div class="p-2 bg-emerald-100 text-emerald-600 rounded-xl">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Remaining</span>
-                    </div>
-                    <h2 id="dash-total-balance" class="text-3xl font-bold text-slate-800 tracking-tight">...</h2>
-                    <p class="text-[11px] text-slate-400 mt-2">Future payments from <span id="current-date-display" class="font-semibold text-slate-500">today</span></p>
-                </div>
-            </div>
-
-            <!-- Month Card -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/60 relative overflow-hidden group hover:shadow-md transition-shadow">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
-                <div class="relative z-10">
-                    <div class="flex items-center gap-2 mb-3">
-                        <div class="p-2 bg-blue-100 text-blue-600 rounded-xl">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </div>
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Due in <span id="dash-month-name">...</span></span>
-                    </div>
-                    <h2 id="dash-month-total" class="text-3xl font-bold text-slate-800 tracking-tight">...</h2>
-                    <p class="text-[11px] text-slate-400 mt-2">Active filter summary</p>
-                </div>
-            </div>
-
-            <!-- Next Due Card -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/60 relative overflow-hidden group hover:shadow-md transition-shadow">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-purple-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
-                <div class="relative z-10">
-                    <div class="flex items-center gap-2 mb-3">
-                        <div class="p-2 bg-purple-100 text-purple-600 rounded-xl">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        </div>
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Next Payment</span>
-                    </div>
-                    <h2 id="dash-next-amount" class="text-3xl font-bold text-purple-600 tracking-tight">...</h2>
-                    <p id="dash-next-date" class="text-[11px] font-semibold text-purple-400 mt-2 uppercase">...</p>
-                </div>
-            </div>
+<body>
+<div class="app">
+    <header class="header fade-up">
+        <div class="logo">
+            <div class="logo-mark">$</div>
+            <div class="logo-text">Ref 23792 <span>/ payment tracker</span></div>
         </div>
-
-        <!-- Toolbar -->
-        <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200 p-3 md:p-4 sticky top-4 z-40">
-            <div class="flex flex-col lg:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-4 w-full lg:w-auto">
-                    <div class="flex items-center bg-slate-100 p-1 rounded-xl">
-                        <button id="prev-month" class="p-2 hover:bg-white text-slate-500 rounded-lg transition-all active:scale-90">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                        </button>
-                        <button id="jump-today" class="px-4 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-widest">Today</button>
-                        <button id="next-month" class="p-2 hover:bg-white text-slate-500 rounded-lg transition-all active:scale-90">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                        </button>
-                    </div>
-                    <h2 id="month-year" class="text-xl font-bold text-slate-800 min-w-[180px] text-center"></h2>
-                </div>
-
-                <div class="flex flex-wrap justify-center lg:justify-end gap-2" id="filter-container">
-                    <!-- Dynamic Filters -->
-                </div>
-            </div>
+    </header>
+    <div class="stats">
+        <div class="stat fade-up d1">
+            <div class="stat-label"><div class="stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>Remaining</div>
+            <div class="stat-val" id="dash-remaining">...</div>
+            <div class="stat-sub">From <strong id="dash-date">today</strong></div>
         </div>
-
-        <!-- Calendar Container -->
-        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden animate-in">
-            <div class="grid grid-cols-7 md:grid-cols-8 border-b border-slate-100 bg-slate-50/50">
-                <div class="py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sun</div>
-                <div class="py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mon</div>
-                <div class="py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tue</div>
-                <div class="py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Wed</div>
-                <div class="py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thu</div>
-                <div class="py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fri</div>
-                <div class="py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sat</div>
-                <div class="hidden md:flex items-center justify-center py-4 bg-emerald-50/50 border-l border-slate-100 text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Weekly Total</div>
-            </div>
-            
-            <div class="overflow-x-auto custom-scroll">
-                <div id="calendar-grid" class="grid grid-cols-7 md:grid-cols-8 min-w-full bg-slate-100/50 gap-px">
-                    <!-- JS Content -->
-                </div>
-            </div>
+        <div class="stat fade-up d2">
+            <div class="stat-label"><div class="stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>Payments Left</div>
+            <div class="stat-val" id="dash-count">...</div>
+            <div class="stat-sub" id="dash-final">...</div>
         </div>
-
-        <!-- Detail Drawer -->
-        <div id="day-details-container" class="hidden animate-in bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
-            <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-                <div class="flex flex-col">
-                    <h3 class="font-bold text-slate-800 text-lg" id="detail-date-title">...</h3>
-                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Payment Breakdown</span>
-                </div>
-                <div class="flex flex-col items-end">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Day Total</span>
-                    <span class="text-xl font-bold text-slate-900" id="detail-total">$0.00</span>
-                </div>
-            </div>
-            <div id="detail-list" class="p-4 space-y-3">
-                <!-- List Items -->
-            </div>
+        <div class="stat fade-up d3">
+            <div class="stat-label"><div class="stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>Next Payment</div>
+            <div class="stat-val" id="dash-next-amt">...</div>
+            <div class="stat-sub" id="dash-next-date">...</div>
         </div>
-        
     </div>
+    <div class="progress-wrap fade-up d3">
+        <div class="progress-labels"><span>Paid: <strong id="prog-paid">...</strong></span><span><strong id="prog-pct">...</strong> complete</span><span>Total: <strong id="prog-total">...</strong></span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-bar" style="width:0%"></div></div>
+    </div>
+    <div class="toolbar fade-up d3">
+        <div class="nav-left">
+            <div class="nav-buttons">
+                <button id="prev-month" class="nav-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+                <button id="jump-today" class="today-btn">Today</button>
+                <button id="next-month" class="nav-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+            </div>
+            <h2 id="month-year" class="month-title"></h2>
+        </div>
+    </div>
+    <div class="cal-wrap fade-up d4">
+        <div class="cal-header">
+            <div class="cal-header-cell">Sun</div><div class="cal-header-cell">Mon</div><div class="cal-header-cell">Tue</div><div class="cal-header-cell">Wed</div><div class="cal-header-cell">Thu</div><div class="cal-header-cell">Fri</div><div class="cal-header-cell">Sat</div>
+        </div>
+        <div id="calendar-grid" class="cal-grid"></div>
+    </div>
+    <div id="detail-container" class="detail hidden fade-up">
+        <div class="detail-hdr">
+            <div><div class="detail-title" id="detail-title">...</div><div class="detail-sub">Payment Detail</div></div>
+            <div><div class="detail-total-label">Amount</div><div class="detail-total-val" id="detail-total">$0.00</div></div>
+        </div>
+        <div id="detail-list" class="detail-list"></div>
+    </div>
+</div>
+<script>
+    const payments = [
+        { date: '2025-07-11', amount: 303.80 }, { date: '2025-07-18', amount: 303.80 },
+        { date: '2025-07-25', amount: 303.80 }, { date: '2025-08-01', amount: 303.80 },
+        { date: '2025-08-08', amount: 303.80 }, { date: '2025-08-15', amount: 303.80 },
+        { date: '2025-08-22', amount: 303.80 }, { date: '2025-08-29', amount: 303.80 },
+        { date: '2025-09-05', amount: 303.80 }, { date: '2025-09-12', amount: 303.80 },
+        { date: '2025-09-19', amount: 303.80 }, { date: '2025-09-26', amount: 303.80 },
+        { date: '2025-10-03', amount: 303.80 }, { date: '2025-10-10', amount: 303.80 },
+        { date: '2025-10-17', amount: 303.80 }, { date: '2025-10-24', amount: 303.80 },
+        { date: '2025-10-31', amount: 303.80 }, { date: '2025-11-07', amount: 303.80 },
+        { date: '2025-11-14', amount: 303.80 }, { date: '2025-11-21', amount: 303.80 },
+        { date: '2025-11-28', amount: 303.80 }, { date: '2025-12-05', amount: 303.80 },
+        { date: '2025-12-12', amount: 303.80 }, { date: '2025-12-19', amount: 303.80 },
+        { date: '2025-12-29', amount: 303.80 }, { date: '2026-01-05', amount: 303.80 },
+        { date: '2026-01-09', amount: 303.80 }, { date: '2026-01-16', amount: 303.80 },
+        { date: '2026-01-23', amount: 303.80 }, { date: '2026-01-30', amount: 303.80 },
+        { date: '2026-02-06', amount: 303.80 }, { date: '2026-02-13', amount: 303.80 },
+        { date: '2026-02-20', amount: 303.80 }, { date: '2026-02-27', amount: 303.80 },
+        { date: '2026-03-06', amount: 303.80 }, { date: '2026-03-13', amount: 303.80 },
+        { date: '2026-03-20', amount: 303.80 }, { date: '2026-03-27', amount: 303.80 },
+        { date: '2026-04-07', amount: 301.31 },
+    ];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const state = { year: today.getFullYear(), month: today.getMonth(), selected: today, lastWidth: window.innerWidth };
+    const $ = id => document.getElementById(id);
+    const fmt = amt => amt.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    const ds = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    function pd(s) { const [y,m,d] = s.split('-').map(Number); const dt = new Date(y,m-1,d); dt.setHours(0,0,0,0); return dt; }
 
-    <script>
-        // --- Core Data ---
-        const colorPalettes = {
-            '22239': { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', hover: 'hover:bg-emerald-100', dot: 'bg-emerald-500' },
-            '22716': { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', hover: 'hover:bg-blue-100', dot: 'bg-blue-500' },
-            '22475': { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', hover: 'hover:bg-indigo-100', dot: 'bg-indigo-500' },
-            '22996': { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', hover: 'hover:bg-amber-100', dot: 'bg-amber-500' },
-            '23792': { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', hover: 'hover:bg-rose-100', dot: 'bg-rose-500' },
-            '23989': { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700', hover: 'hover:bg-cyan-100', dot: 'bg-cyan-500' },
-            'default': { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-700', hover: 'hover:bg-gray-100', dot: 'bg-gray-500' }
-        };
+    function updateStats() {
+        const future = payments.filter(p => pd(p.date) >= today);
+        const past = payments.filter(p => pd(p.date) < today);
+        const remaining = future.reduce((s,p) => s + p.amount, 0);
+        const paid = past.reduce((s,p) => s + p.amount, 0);
+        const total = payments.reduce((s,p) => s + p.amount, 0);
+        const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
+        $('dash-remaining').textContent = fmt(remaining);
+        $('dash-date').textContent = today.toLocaleDateString('en-CA');
+        $('dash-count').textContent = future.length;
+        if (future.length > 0) {
+            $('dash-final').textContent = 'Final: ' + pd(future[future.length-1].date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+            $('dash-next-amt').textContent = fmt(future[0].amount);
+            $('dash-next-date').textContent = 'Due ' + pd(future[0].date).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        } else { $('dash-final').textContent='All complete'; $('dash-next-amt').textContent='Done!'; $('dash-next-date').textContent='All caught up'; }
+        $('prog-paid').textContent = fmt(paid);
+        $('prog-total').textContent = fmt(total);
+        $('prog-pct').textContent = pct + '%';
+        $('prog-bar').style.width = pct + '%';
+    }
 
-        const rawPayments = [
-            { date: '2025-01-14', amount: 812.00, ref: '22239' }, { date: '2025-01-21', amount: 812.00, ref: '22239' },
-            { date: '2025-01-28', amount: 812.00, ref: '22239' }, { date: '2025-02-04', amount: 812.00, ref: '22239' },
-            { date: '2025-02-11', amount: 812.00, ref: '22239' }, { date: '2025-02-18', amount: 812.00, ref: '22239' },
-            { date: '2025-02-25', amount: 812.00, ref: '22239' }, { date: '2025-03-04', amount: 812.00, ref: '22239' },
-            { date: '2025-03-11', amount: 812.00, ref: '22239' }, { date: '2025-03-18', amount: 812.00, ref: '22239' },
-            { date: '2025-03-25', amount: 812.00, ref: '22239' }, { date: '2025-04-01', amount: 812.00, ref: '22239' },
-            { date: '2025-04-08', amount: 810.35, ref: '22239' }, { date: '2025-03-03', amount: 647.54, ref: '22716' },
-            { date: '2025-03-10', amount: 647.54, ref: '22716' }, { date: '2025-03-17', amount: 647.54, ref: '22716' },
-            { date: '2025-03-24', amount: 647.54, ref: '22716' }, { date: '2025-03-31', amount: 647.54, ref: '22716' },
-            { date: '2025-04-07', amount: 647.54, ref: '22716' }, { date: '2025-04-14', amount: 647.54, ref: '22716' },
-            { date: '2025-04-22', amount: 647.54, ref: '22716' }, { date: '2025-04-28', amount: 647.54, ref: '22716' },
-            { date: '2025-05-05', amount: 647.54, ref: '22716' }, { date: '2025-05-12', amount: 647.54, ref: '22716' },
-            { date: '2025-05-20', amount: 647.54, ref: '22716' }, { date: '2025-05-26', amount: 647.54, ref: '22716' },
-            { date: '2025-06-02', amount: 647.54, ref: '22716' }, { date: '2025-06-09', amount: 647.54, ref: '22716' },
-            { date: '2025-06-16', amount: 647.54, ref: '22716' }, { date: '2025-06-23', amount: 647.54, ref: '22716' },
-            { date: '2025-06-30', amount: 647.54, ref: '22716' }, { date: '2025-07-07', amount: 647.54, ref: '22716' },
-            { date: '2025-07-14', amount: 647.54, ref: '22716' }, { date: '2025-07-21', amount: 647.54, ref: '22716' },
-            { date: '2025-07-28', amount: 647.54, ref: '22716' }, { date: '2025-08-05', amount: 647.54, ref: '22716' },
-            { date: '2025-08-11', amount: 647.54, ref: '22716' }, { date: '2025-08-18', amount: 647.54, ref: '22716' },
-            { date: '2025-08-25', amount: 644.28, ref: '22716' }, { date: '2025-02-05', amount: 817.31, ref: '22475' },
-            { date: '2025-02-12', amount: 817.31, ref: '22475' }, { date: '2025-02-19', amount: 817.31, ref: '22475' },
-            { date: '2025-02-26', amount: 817.31, ref: '22475' }, { date: '2025-03-05', amount: 817.31, ref: '22475' },
-            { date: '2025-03-12', amount: 817.31, ref: '22475' }, { date: '2025-03-19', amount: 817.31, ref: '22475' },
-            { date: '2025-03-26', amount: 817.31, ref: '22475' }, { date: '2025-04-02', amount: 817.31, ref: '22475' },
-            { date: '2025-04-09', amount: 817.31, ref: '22475' }, { date: '2025-04-16', amount: 817.31, ref: '22475' },
-            { date: '2025-04-23', amount: 817.31, ref: '22475' }, { date: '2025-04-30', amount: 815.58, ref: '22475' },
-            { date: '2025-04-02', amount: 596.77, ref: '22996' }, { date: '2025-04-09', amount: 596.77, ref: '22996' },
-            { date: '2025-04-16', amount: 596.77, ref: '22996' }, { date: '2025-04-23', amount: 596.77, ref: '22996' },
-            { date: '2025-04-30', amount: 596.77, ref: '22996' }, { date: '2025-05-07', amount: 596.77, ref: '22996' },
-            { date: '2025-05-14', amount: 596.77, ref: '22996' }, { date: '2025-05-21', amount: 596.77, ref: '22996' },
-            { date: '2025-05-28', amount: 596.77, ref: '22996' }, { date: '2025-06-04', amount: 596.77, ref: '22996' },
-            { date: '2025-06-11', amount: 596.77, ref: '22996' }, { date: '2025-06-18', amount: 596.77, ref: '22996' },
-            { date: '2025-06-25', amount: 596.77, ref: '22996' }, { date: '2025-07-02', amount: 596.77, ref: '22996' },
-            { date: '2025-07-09', amount: 596.77, ref: '22996' }, { date: '2025-07-16', amount: 596.77, ref: '22996' },
-            { date: '2025-07-23', amount: 596.77, ref: '22996' }, { date: '2025-07-30', amount: 596.77, ref: '22996' },
-            { date: '2025-08-06', amount: 596.77, ref: '22996' }, { date: '2025-08-13', amount: 596.77, ref: '22996' },
-            { date: '2025-08-20', amount: 596.77, ref: '22996' }, { date: '2025-08-27', amount: 596.77, ref: '22996' },
-            { date: '2025-09-03', amount: 596.77, ref: '22996' }, { date: '2025-09-10', amount: 596.77, ref: '22996' },
-            { date: '2025-09-17', amount: 596.77, ref: '22996' }, { date: '2025-09-24', amount: 596.77, ref: '22996' },
-            { date: '2025-10-01', amount: 596.77, ref: '22996' }, { date: '2025-10-08', amount: 596.77, ref: '22996' },
-            { date: '2025-10-15', amount: 596.77, ref: '22996' }, { date: '2025-10-22', amount: 596.77, ref: '22996' },
-            { date: '2025-10-29', amount: 596.77, ref: '22996' }, { date: '2025-11-05', amount: 596.77, ref: '22996' },
-            { date: '2025-11-12', amount: 596.77, ref: '22996' }, { date: '2025-11-19', amount: 596.77, ref: '22996' },
-            { date: '2025-11-26', amount: 596.77, ref: '22996' }, { date: '2025-12-03', amount: 596.77, ref: '22996' },
-            { date: '2025-12-10', amount: 596.77, ref: '22996' }, { date: '2025-12-17', amount: 596.77, ref: '22996' },
-            { date: '2025-12-24', amount: 585.93, ref: '22996' }, { date: '2025-07-11', amount: 303.80, ref: '23792' },
-            { date: '2025-07-18', amount: 303.80, ref: '23792' }, { date: '2025-07-25', amount: 303.80, ref: '23792' },
-            { date: '2025-08-01', amount: 303.80, ref: '23792' }, { date: '2025-08-08', amount: 303.80, ref: '23792' },
-            { date: '2025-08-15', amount: 303.80, ref: '23792' }, { date: '2025-08-22', amount: 303.80, ref: '23792' },
-            { date: '2025-08-29', amount: 303.80, ref: '23792' }, { date: '2025-09-05', amount: 303.80, ref: '23792' },
-            { date: '2025-09-12', amount: 303.80, ref: '23792' }, { date: '2025-09-19', amount: 303.80, ref: '23792' },
-            { date: '2025-09-26', amount: 303.80, ref: '23792' }, { date: '2025-10-03', amount: 303.80, ref: '23792' },
-            { date: '2025-10-10', amount: 303.80, ref: '23792' }, { date: '2025-10-17', amount: 303.80, ref: '23792' },
-            { date: '2025-10-24', amount: 303.80, ref: '23792' }, { date: '2025-10-31', amount: 303.80, ref: '23792' },
-            { date: '2025-11-07', amount: 303.80, ref: '23792' }, { date: '2025-11-14', amount: 303.80, ref: '23792' },
-            { date: '2025-11-21', amount: 303.80, ref: '23792' }, { date: '2025-11-28', amount: 303.80, ref: '23792' },
-            { date: '2025-12-05', amount: 303.80, ref: '23792' }, { date: '2025-12-12', amount: 303.80, ref: '23792' },
-            { date: '2025-12-19', amount: 303.80, ref: '23792' }, { date: '2025-12-29', amount: 303.80, ref: '23792' },
-            { date: '2026-01-05', amount: 303.80, ref: '23792' }, { date: '2026-01-09', amount: 303.80, ref: '23792' },
-            { date: '2026-01-16', amount: 303.80, ref: '23792' }, { date: '2026-01-23', amount: 303.80, ref: '23792' },
-            { date: '2026-01-30', amount: 303.80, ref: '23792' }, { date: '2026-02-06', amount: 303.80, ref: '23792' },
-            { date: '2026-02-13', amount: 303.80, ref: '23792' }, { date: '2026-02-20', amount: 303.80, ref: '23792' },
-            { date: '2026-02-27', amount: 303.80, ref: '23792' }, { date: '2026-03-06', amount: 303.80, ref: '23792' },
-            { date: '2026-03-13', amount: 303.80, ref: '23792' }, { date: '2026-03-20', amount: 303.80, ref: '23792' },
-            { date: '2026-03-27', amount: 303.80, ref: '23792' }, { date: '2026-04-07', amount: 301.31, ref: '23792' },
-            { date: '2025-08-05', amount: 1158.78, ref: '23989' }, { date: '2025-08-11', amount: 1158.78, ref: '23989' },
-            { date: '2025-08-18', amount: 1158.78, ref: '23989' }, { date: '2025-08-25', amount: 1158.78, ref: '23989' },
-            { date: '2025-09-02', amount: 1158.78, ref: '23989' }, { date: '2025-09-08', amount: 1158.78, ref: '23989' },
-            { date: '2025-09-15', amount: 1158.78, ref: '23989' }, { date: '2025-09-22', amount: 1158.78, ref: '23989' },
-            { date: '2025-09-29', amount: 1158.78, ref: '23989' }, { date: '2025-10-06', amount: 1.59, ref: '23989' },
-        ];
-
-        // --- State ---
-        const todayActual = new Date();
-        todayActual.setHours(0, 0, 0, 0);
-        
-        const state = {
-            currentYear: todayActual.getFullYear(),
-            currentMonth: todayActual.getMonth(),
-            selectedDate: todayActual,
-            activeFilters: new Set(Object.keys(colorPalettes).filter(k => k !== 'default')),
-            lastWidth: window.innerWidth // Track width to prevent mobile scroll-resize jumping
-        };
-
-        // --- Elements ---
-        const els = {
-            grid: document.getElementById('calendar-grid'),
-            monthTitle: document.getElementById('month-year'),
-            dashTotal: document.getElementById('dash-total-balance'),
-            dashDate: document.getElementById('current-date-display'),
-            dashMonthTotal: document.getElementById('dash-month-total'),
-            dashMonthName: document.getElementById('dash-month-name'),
-            dashNextAmt: document.getElementById('dash-next-amount'),
-            dashNextDate: document.getElementById('dash-next-date'),
-            filterContainer: document.getElementById('filter-container'),
-            detailContainer: document.getElementById('day-details-container'),
-            detailTitle: document.getElementById('detail-date-title'),
-            detailTotal: document.getElementById('detail-total'),
-            detailList: document.getElementById('detail-list')
-        };
-
-        // --- Utils ---
-        const formatCurrency = (amt) => amt.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-        const formatCompact = (amt) => amt >= 1000 ? '$' + (amt / 1000).toFixed(1) + 'k' : '$' + Math.round(amt);
-        const getStyle = (ref) => colorPalettes[ref] || colorPalettes['default'];
-
-        // --- Logic ---
-        function initFilters() {
-            els.filterContainer.innerHTML = '';
-            const uniqueRefs = [...new Set(rawPayments.map(p => p.ref))].sort();
-            uniqueRefs.forEach(ref => {
-                const btn = document.createElement('button');
-                const style = getStyle(ref);
-                const isActive = state.activeFilters.has(ref);
-                btn.className = `filter-btn text-[10px] md:text-xs px-4 py-2 rounded-full border font-bold flex items-center gap-2 ${isActive ? 'active' : 'inactive'}`;
-                if (isActive) btn.classList.add(style.bg, style.border, style.text);
-                btn.innerHTML = `<span class="w-2 h-2 rounded-full ${style.dot} shadow-sm dot-align"></span> Ref ${ref}`;
-                btn.onclick = () => {
-                    isActive ? state.activeFilters.delete(ref) : state.activeFilters.add(ref);
-                    initFilters(); updateDashboard(); renderCalendar(); updateDetailView();
-                };
-                els.filterContainer.appendChild(btn);
+    function updateDetail() {
+        const d = ds(state.selected);
+        const dayP = payments.filter(p => p.date === d);
+        const sum = dayP.reduce((s,p) => s + p.amount, 0);
+        $('detail-title').textContent = state.selected.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+        $('detail-total').textContent = fmt(sum);
+        const list = $('detail-list'); list.innerHTML = '';
+        if (!dayP.length) { list.innerHTML='<div class="empty-day">No payment on this day</div>'; $('detail-container').classList.add('hidden'); }
+        else {
+            $('detail-container').classList.remove('hidden');
+            dayP.forEach(p => {
+                const isPast = pd(p.date) < today;
+                const row = document.createElement('div'); row.className='detail-item';
+                row.innerHTML=`<div class="detail-item-left"><span class="detail-dot"></span><span class="detail-ref">23792</span>${isPast?'<span style="font-size:10px;color:var(--emerald);font-weight:600">✓ PAID</span>':'<span style="font-size:10px;color:var(--rose);font-weight:600">PENDING</span>'}</div><span class="detail-amt">${fmt(p.amount)}</span>`;
+                list.appendChild(row);
             });
         }
+    }
 
-        function getFilteredPayments() {
-            return rawPayments.filter(p => state.activeFilters.has(p.ref));
-        }
-
-        function updateDashboard() {
-            const activePayments = getFilteredPayments();
-            let totalRemaining = 0, nextPayment = null, minDiff = Infinity;
-            activePayments.forEach(p => {
-                const [y, m, d] = p.date.split('-').map(Number);
-                const pDate = new Date(y, m - 1, d);
-                pDate.setHours(0,0,0,0);
-                if (pDate >= todayActual) {
-                    totalRemaining += p.amount;
-                    const diff = pDate - todayActual;
-                    if (diff < minDiff) { minDiff = diff; nextPayment = { ...p, jsDate: pDate }; }
-                }
-            });
-            let monthTotal = 0;
-            activePayments.forEach(p => {
-                const [y, m, d] = p.date.split('-').map(Number);
-                if (y === state.currentYear && (m-1) === state.currentMonth) monthTotal += p.amount;
-            });
-            els.dashTotal.textContent = formatCurrency(totalRemaining);
-            if(els.dashDate) els.dashDate.textContent = todayActual.toLocaleDateString('en-CA');
-            els.dashMonthTotal.textContent = formatCurrency(monthTotal);
-            els.dashMonthName.textContent = new Date(state.currentYear, state.currentMonth).toLocaleString('default', { month: 'short' });
-            if (nextPayment) {
-                els.dashNextAmt.textContent = formatCurrency(nextPayment.amount);
-                els.dashNextDate.textContent = `Due ${nextPayment.jsDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (Ref ${nextPayment.ref})`;
-            } else {
-                els.dashNextAmt.textContent = "Done!"; els.dashNextDate.textContent = "-";
+    function renderCalendar() {
+        const {year,month}=state;
+        $('month-year').innerHTML=`${new Date(year,month).toLocaleString('en-US',{month:'long'})} <span>${year}</span>`;
+        const grid=$('calendar-grid'); grid.innerHTML='';
+        const fd=new Date(year,month,1).getDay(), dim=new Date(year,month+1,0).getDate(), pe=new Date(year,month,0).getDate();
+        for(let i=0;i<42;i++){
+            let cY=year,cM=month,cD,cur=true;
+            if(i<fd){cD=pe-(fd-i-1);cM=month-1;cur=false;}
+            else if(i>=fd+dim){cD=i-(fd+dim)+1;cM=month+1;cur=false;}
+            else{cD=i-fd+1;}
+            if(cM<0){cM=11;cY--;}else if(cM>11){cM=0;cY++;}
+            const dt=new Date(cY,cM,cD);dt.setHours(0,0,0,0);
+            const d=ds(dt), isToday=dt.getTime()===today.getTime(), isSel=state.selected&&dt.getTime()===state.selected.getTime();
+            const dayP=payments.filter(p=>p.date===d), isPast=dt<today;
+            const cell=document.createElement('div');
+            cell.className=`cal-cell${cur?'':' other'}${isSel?' selected':''}`;
+            cell.onclick=()=>{state.selected=dt;renderCalendar();updateDetail();};
+            const num=document.createElement('div');
+            if(isToday){num.className='day-today';}else{num.className='day-num';}
+            num.textContent=cD; cell.appendChild(num);
+            if(dayP.length>0){
+                const pill=document.createElement('div'); pill.className='pay-pill';
+                if(isPast){pill.style.opacity='0.4';pill.style.textDecoration='line-through';}
+                pill.textContent=fmt(dayP[0].amount); cell.appendChild(pill);
             }
+            grid.appendChild(cell);
         }
+    }
 
-        function updateDetailView() {
-            const dateStr = `${state.selectedDate.getFullYear()}-${String(state.selectedDate.getMonth() + 1).padStart(2, '0')}-${String(state.selectedDate.getDate()).padStart(2, '0')}`;
-            const dayPayments = getFilteredPayments().filter(p => p.date === dateStr);
-            const daySum = dayPayments.reduce((acc, curr) => acc + curr.amount, 0);
-            els.detailTitle.textContent = state.selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            els.detailTotal.textContent = formatCurrency(daySum);
-            els.detailList.innerHTML = '';
-            if (dayPayments.length === 0) {
-                els.detailList.innerHTML = '<div class="text-sm text-slate-400 italic text-center py-6">Quiet day! No payments scheduled.</div>';
-                els.detailContainer.classList.add('hidden');
-            } else {
-                els.detailContainer.classList.remove('hidden');
-                dayPayments.forEach(p => {
-                    const style = getStyle(p.ref);
-                    const row = document.createElement('div');
-                    row.className = `flex justify-between items-center p-4 rounded-2xl border ${style.bg} ${style.border} group hover:scale-[1.01] transition-transform`;
-                    row.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <span class="w-3 h-3 rounded-full ${style.dot} ring-4 ring-white shadow-sm dot-align"></span>
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-white/60 ${style.text}">Ref ${p.ref}</span>
-                        </div>
-                        <span class="font-bold text-slate-800">${formatCurrency(p.amount)}</span>
-                    `;
-                    els.detailList.appendChild(row);
-                });
-            }
-        }
-
-        function renderCalendar() {
-            const year = state.currentYear, month = state.currentMonth;
-            els.monthTitle.textContent = new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' });
-            els.grid.innerHTML = '';
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const prevMonthDate = new Date(year, month, 0);
-            const activePayments = getFilteredPayments();
-            const isMobile = window.innerWidth < 768;
-
-            for (let week = 0; week < 6; week++) {
-                let weeklyTotal = 0;
-                for (let day = 0; day < 7; day++) {
-                    const i = week * 7 + day;
-                    let cYear = year, cMonth = month, cDay;
-                    let isCur = true;
-                    if (i < firstDay) { cDay = prevMonthDate.getDate() - (firstDay - i - 1); cMonth = month - 1; isCur = false; }
-                    else if (i >= firstDay + daysInMonth) { cDay = i - (firstDay + daysInMonth) + 1; cMonth = month + 1; isCur = false; }
-                    else { cDay = i - firstDay + 1; }
-                    if (cMonth < 0) { cMonth = 11; cYear--; } else if (cMonth > 11) { cMonth = 0; cYear++; }
-                    const dateObj = new Date(cYear, cMonth, cDay); dateObj.setHours(0,0,0,0);
-                    const dateStr = `${cYear}-${String(cMonth + 1).padStart(2, '0')}-${String(cDay).padStart(2, '0')}`;
-                    const isToday = dateObj.getTime() === todayActual.getTime();
-                    const isSelected = state.selectedDate && dateObj.getTime() === state.selectedDate.getTime();
-                    const dayPayments = activePayments.filter(p => p.date === dateStr);
-                    const daySum = dayPayments.reduce((acc, curr) => acc + curr.amount, 0);
-                    weeklyTotal += daySum;
-
-                    const cell = document.createElement('div');
-                    cell.className = `calendar-cell relative p-1 md:p-2 flex flex-col gap-1 border-r border-b border-slate-100 ${isCur ? 'bg-white' : 'bg-slate-50/40 text-slate-300'}`;
-                    if (isSelected) cell.classList.add('selected-day');
-                    cell.onclick = () => { state.selectedDate = dateObj; renderCalendar(); updateDetailView(); };
-
-                    const hdr = document.createElement('div'); hdr.className = "flex justify-between items-start";
-                    const num = document.createElement('span'); num.textContent = cDay;
-                    // Improved alignment logic for the circle number
-                    num.className = isToday ? "today-marker w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-blue-600 text-white font-bold rounded-full text-[10px] md:text-sm shadow-lg shadow-blue-200 leading-none pt-[1px]" : "text-[11px] md:text-xs font-bold leading-none";
-                    hdr.appendChild(num); cell.appendChild(hdr);
-
-                    const body = document.createElement('div'); body.className = "flex-1 flex flex-col gap-1 mt-1";
-                    if (isMobile) {
-                        if (daySum > 0) {
-                            const b = document.createElement('div'); b.className = `text-[9px] text-center font-bold py-1 rounded-lg border ${daySum > 1000 ? 'bg-orange-50 border-orange-100 text-orange-600' : 'bg-slate-100 border-slate-200 text-slate-600'}`;
-                            b.textContent = formatCompact(daySum); body.appendChild(b);
-                        }
-                    } else {
-                        dayPayments.slice(0, 3).forEach(p => {
-                            const s = getStyle(p.ref);
-                            const pill = document.createElement('div');
-                            pill.className = `text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${s.bg} ${s.border} ${s.text} shadow-sm`;
-                            pill.textContent = formatCurrency(p.amount); body.appendChild(pill);
-                        });
-                        if (dayPayments.length > 3) {
-                            const m = document.createElement('div'); m.className = "text-[8px] text-slate-400 font-bold ml-1";
-                            m.textContent = `+${dayPayments.length - 3} more`; body.appendChild(m);
-                        }
-                    }
-                    cell.appendChild(body); els.grid.appendChild(cell);
-                }
-                const led = document.createElement('div');
-                led.className = "hidden md:flex flex-col items-center justify-center bg-emerald-50/20 border-b border-slate-100";
-                if (weeklyTotal > 0) {
-                    led.innerHTML = `<span class="text-[9px] text-emerald-400 font-bold uppercase tracking-tighter">Week Sum</span><span class="text-xs font-bold text-emerald-700 bg-white px-2 py-1 rounded-lg border border-emerald-100 shadow-sm">${formatCurrency(weeklyTotal)}</span>`;
-                }
-                els.grid.appendChild(led);
-                if (weeklyTotal > 0 && isMobile) {
-                    const r = document.createElement('div'); r.className = "col-span-7 bg-emerald-50/40 p-2 text-center border-b border-slate-200";
-                    r.innerHTML = `<span class="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Weekly Total: ${formatCurrency(weeklyTotal)}</span>`;
-                    els.grid.appendChild(r);
-                }
-            }
-        }
-
-        // --- Init & Handlers ---
-        document.getElementById('prev-month').onclick = () => { state.currentMonth--; if (state.currentMonth < 0) { state.currentMonth = 11; state.currentYear--; } updateDashboard(); renderCalendar(); };
-        document.getElementById('next-month').onclick = () => { state.currentMonth++; if (state.currentMonth > 11) { state.currentMonth = 0; state.currentYear++; } updateDashboard(); renderCalendar(); };
-        document.getElementById('jump-today').onclick = () => { state.currentYear = todayActual.getFullYear(); state.currentMonth = todayActual.getMonth(); state.selectedDate = todayActual; updateDashboard(); renderCalendar(); updateDetailView(); };
-        
-        // SMART RESIZE HANDLER: Prevents jumping on mobile scroll
-        window.onresize = () => {
-            const currentWidth = window.innerWidth;
-            if (currentWidth !== state.lastWidth) {
-                state.lastWidth = currentWidth;
-                renderCalendar();
-            }
-        };
-        
-        initFilters(); updateDashboard(); updateDetailView(); renderCalendar();
-    </script>
+    $('prev-month').onclick=()=>{state.month--;if(state.month<0){state.month=11;state.year--;}updateStats();renderCalendar();};
+    $('next-month').onclick=()=>{state.month++;if(state.month>11){state.month=0;state.year++;}updateStats();renderCalendar();};
+    $('jump-today').onclick=()=>{state.year=today.getFullYear();state.month=today.getMonth();state.selected=today;updateStats();renderCalendar();updateDetail();};
+    window.onresize=()=>{if(window.innerWidth!==state.lastWidth){state.lastWidth=window.innerWidth;renderCalendar();}};
+    updateStats(); updateDetail(); renderCalendar();
+</script>
 </body>
 </html>
